@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GrowthArchive",
+  "type": "object",
+  "required": ["archive_version", "updated_at", "explicit_profile", "confirmed_goal"],
+  "properties": {
+    "archive_version": {"type": "string"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "explicit_profile": {"type": "object"},
+    "confirmed_goal": {"type": "object"},
+    "pending_confirmations": {"type": "array"}
+  },
+  "additionalProperties": true
+}

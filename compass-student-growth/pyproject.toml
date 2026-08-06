@@ -1,0 +1,14 @@
+[project]
+name = "compass-student-growth"
+version = "1.0.0"
+description = "离线优先的大学生就业方向与成长规划 Skill"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"

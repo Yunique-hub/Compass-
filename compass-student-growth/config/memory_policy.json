@@ -1,0 +1,21 @@
+{
+  "temporary_threshold": 0.40,
+  "long_term_threshold": 0.70,
+  "temporary_ttl_days": 30,
+  "minimum_retrieval_score": 0.20,
+  "memory_weights": {
+    "future_relevance": 0.25,
+    "stability": 0.20,
+    "user_explicitness": 0.20,
+    "recurrence": 0.15,
+    "confidence": 0.10,
+    "task_value": 0.10
+  },
+  "retrieval_weights": {
+    "semantic_similarity": 0.55,
+    "memory_importance": 0.20,
+    "recency": 0.15,
+    "usage_frequency": 0.10
+  },
+  "sensitive_types": ["health", "crisis", "identity", "precise_location", "financial"]
+}

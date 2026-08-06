@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MemoryCandidate",
+  "type": "object",
+  "required": ["candidate_id", "user_id", "memory_type", "content"],
+  "properties": {
+    "candidate_id": {"type": "string"},
+    "user_id": {"type": "string"},
+    "memory_type": {"type": "string"},
+    "content": {},
+    "sensitivity": {"type": "string"},
+    "requires_confirmation": {"type": "boolean"}
+  },
+  "additionalProperties": true
+}

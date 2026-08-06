@@ -1,0 +1,17 @@
+{
+  "library_version": "1.0.0",
+  "resources": [
+    {
+      "resource_id": "local-java-practice", "name": "Java 基础可验收练习清单", "stage": "入门", "estimated_hours": 4, "has_exercises": true, "resource_type": "本地练习", "activity_level": "稳定", "last_checked": "2026-08-06", "url_or_reference": "reference/planning_rules.md", "recommended_for": ["Java"], "reason": "形成集合、异常和单元练习证据", "fallback_resource_id": "local-project-template", "verified": true
+    },
+    {
+      "resource_id": "local-project-template", "name": "服务端项目验收模板", "stage": "入门", "estimated_hours": 3, "has_exercises": true, "resource_type": "本地模板", "activity_level": "稳定", "last_checked": "2026-08-06", "url_or_reference": "reference/planning_rules.md", "recommended_for": ["Spring Boot", "MySQL", "Git"], "reason": "用接口、数据设计和提交记录形成作品证据", "fallback_resource_id": "local-java-practice", "verified": true
+    },
+    {
+      "resource_id": "local-sql-practice", "name": "SQL 场景练习与错因复盘模板", "stage": "入门", "estimated_hours": 3, "has_exercises": true, "resource_type": "本地练习", "activity_level": "稳定", "last_checked": "2026-08-06", "url_or_reference": "reference/planning_rules.md", "recommended_for": ["MySQL", "SQL"], "reason": "产出可检查的查询与错因记录", "fallback_resource_id": "local-project-template", "verified": true
+    },
+    {
+      "resource_id": "pending-spring-guide", "name": "Spring Boot 外部入门资源", "stage": "入门", "estimated_hours": 3, "has_exercises": false, "resource_type": "文档", "activity_level": "待核验", "last_checked": "", "url_or_reference": "待团队核验", "recommended_for": ["Spring Boot"], "reason": "候选外部资源，核验前不进入正式推荐", "fallback_resource_id": "local-project-template", "verified": false
+    }
+  ]
+}

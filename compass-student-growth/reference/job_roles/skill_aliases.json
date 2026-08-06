@@ -1,0 +1,14 @@
+{
+  "Java": ["java language", "jdk"],
+  "Spring Boot": ["springboot", "spring boot", "spring-boot"],
+  "Spring Cloud": ["springcloud", "spring cloud", "spring-cloud"],
+  "MyBatis": ["mybatis", "mybatis-plus"],
+  "MySQL": ["mysql"],
+  "Redis": ["redis"],
+  "Docker": ["docker", "容器化"],
+  "Git": ["git", "版本控制"],
+  "Python": ["python", "py"],
+  "SQL": ["sql"],
+  "Pandas": ["pandas"],
+  "Pytest": ["pytest"]
+}

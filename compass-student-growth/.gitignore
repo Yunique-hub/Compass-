@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.test-deps/
+.venv/
+venv/
+*.db
+*.sqlite*
+dist/*.zip
+demo-output/
+.pycache/
