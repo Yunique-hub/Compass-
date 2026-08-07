@@ -118,37 +118,6 @@ docker compose --profile neo4j up -d
 
 9 个演示场景的说明见 `demos/README.md`。运行结果写入忽略的 `runtime/demo-output-v2/`。
 
-## 上游源码和合规
-
-六个上游仓库的固定仓库地址、分支和 commit 位于 `reference/open_source/upstream-lock.json`。完整未带嵌套 `.git` 的源快照保留在 `vendor/`，许可证或单独授权说明保留在 `licenses/`，集成边界见 `THIRD_PARTY_NOTICES.md`。
-
-同步或验证上游快照：
-
-```powershell
-.\.venv\Scripts\python.exe scripts\vendor_sync.py --offline
-```
-
-脚本会核对快照指纹；发现本地修改时拒绝覆盖。需要联网重新同步时去掉 `--offline`，仍会检出 lock 文件中的准确 commit。
-
-## 发布包
-
-竞赛/平台 Skill 包不含完整 `vendor/` 源码，但包含运行代码、测试、文档、许可证和第三方通知：
-
-```powershell
-.\.venv\Scripts\python.exe scripts\pack_skill.py --mode skill
-```
-
-完整开发包包含六个固定上游源快照：
-
-```powershell
-.\.venv\Scripts\python.exe scripts\pack_skill.py --mode full
-```
-
-输出：
-
-- `dist/compass-student-growth-2.2.0-skill.zip`
-- `dist/compass-student-growth-2.2.0-full.zip`
-
 ## 已知限制
 
 - 公共招聘来源覆盖受网站公开可访问性、robots/条款、登录、验证码和页面结构影响；系统不绕过访问控制。
