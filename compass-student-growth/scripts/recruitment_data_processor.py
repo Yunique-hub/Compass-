@@ -72,7 +72,7 @@ def process_snapshot(raw: Mapping[str, Any]) -> dict[str, Any]:
     threshold = 20
     confidence = "low_confidence" if denominator < threshold else ("recommended_sample" if denominator >= 30 else "medium_confidence")
     synthetic = bool(raw.get("synthetic", False))
-    notice = "仅用于功能测试，不代表当前市场" if synthetic else "结论仅适用于所列来源、时间范围和样本。"
+    notice = "仅用于功能测试，不代表真实招聘市场" if synthetic else "结论仅适用于所列来源、时间范围和样本。"
     snapshot = RecruitmentSnapshot(
         snapshot_version=str(raw.get("snapshot_version", "")), city=str(raw.get("city", "")),
         career_direction=str(raw.get("career_direction", "")), collected_at=str(raw.get("collected_at", "")),

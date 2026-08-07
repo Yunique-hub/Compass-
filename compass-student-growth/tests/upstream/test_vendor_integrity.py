@@ -4,6 +4,12 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+pytest_plugins: list[str] = []
+
+import pytest
+
+if not (ROOT / "vendor").is_dir():
+    pytest.skip("skill package intentionally excludes vendor", allow_module_level=True)
 
 
 def test_all_locked_upstreams_are_preserved_without_nested_git() -> None:

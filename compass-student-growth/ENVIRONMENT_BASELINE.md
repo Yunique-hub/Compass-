@@ -1,4 +1,15 @@
-# Compass 2.0 Environment Baseline
+# Compass 2.2.0 Environment Baseline
+
+## 2.2 验证记录（2026-08-07）
+
+- 工程虚拟环境：`.venv/Scripts/python.exe`，pytest 9.1.1。
+- 修改前：compile 通过；`81 passed`；2.1 validator 不支持 `--mode skill`（退出码 2）。
+- 修改后：compile 通过；源目录 `90 passed`；skill/full validation 均 `valid=true`。
+- 五个规定 Demo 全通过；persistent memory Demo 使用两个独立 Python 子进程完成恢复。
+- skill/full 包均生成；skill ZIP 解压后 `82 passed, 2 skipped`，跳过原因仅为 skill 包按设计不包含 vendor；解压目录 skill validation=true。
+- 既有 `pending-spring-guide` 仍产生人工复核 warning，不影响 valid；未静默删除或伪装为已验证。
+
+## 2.0/2.1 历史基线
 
 审计时间：2026-08-07（Asia/Shanghai）
 

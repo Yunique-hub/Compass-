@@ -10,6 +10,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+if not (ROOT / "vendor").is_dir():
+    pytest.skip("skill package intentionally excludes vendor", allow_module_level=True)
 def test_final_review_rule_source_is_present() -> None:
     skill = (ROOT / "vendor/final-review/SKILL.md").read_text(encoding="utf-8")
     assert "Past exams" in skill or "past exam" in skill.casefold() or "真题" in skill

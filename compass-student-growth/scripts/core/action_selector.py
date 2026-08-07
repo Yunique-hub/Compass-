@@ -20,6 +20,13 @@ class MentorAction(str, Enum):
     CREATE_FORMAL_PLAN = "CREATE_FORMAL_PLAN"
     RUN_REVIEW = "RUN_REVIEW"
     RUN_PROGRESS_REVIEW = "RUN_PROGRESS_REVIEW"
+    START_TUTOR = "START_TUTOR"
+    CONTINUE_TUTOR = "CONTINUE_TUTOR"
+    ASSESS_LEARNING = "ASSESS_LEARNING"
+    UPDATE_COMPETENCY = "UPDATE_COMPETENCY"
+    RUN_GAP_ANALYSIS = "RUN_GAP_ANALYSIS"
+    ADJUST_PLAN = "ADJUST_PLAN"
+    FORGET_MEMORY = "FORGET_MEMORY"
 
 
 def select_action(*, preferred_name_ready: bool, intent: str, sufficiency: Mapping[str, Any], facts: Mapping[str, Any], returning_user: bool = False) -> MentorAction:
@@ -29,6 +36,14 @@ def select_action(*, preferred_name_ready: bool, intent: str, sufficiency: Mappi
         return MentorAction.RUN_REVIEW
     if intent == "PROGRESS_REVIEW" or (intent == "MEMORY_QUERY" and returning_user):
         return MentorAction.RUN_PROGRESS_REVIEW
+    if intent == "START_LEARNING":
+        return MentorAction.START_TUTOR
+    if intent == "CONTINUE_LEARNING":
+        return MentorAction.CONTINUE_TUTOR
+    if intent in {"SUBMIT_EXERCISE", "SUBMIT_EVIDENCE"}:
+        return MentorAction.ASSESS_LEARNING
+    if intent in {"GAP_ANALYSIS", "CAREER_GAP"}:
+        return MentorAction.RUN_GAP_ANALYSIS
     if intent in {"RECRUITMENT_ANALYSIS", "JD_ANALYSIS"}:
         return MentorAction.RUN_MARKET_ANALYSIS if sufficiency.get("action_ready") else MentorAction.REQUEST_DESTINATION
     if not sufficiency.get("action_ready"):

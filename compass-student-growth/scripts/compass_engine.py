@@ -1,4 +1,4 @@
-"""Compass 2.1 action-first Growth Engine.
+"""Compass 2.2 market-driven, evidence-first Growth Engine.
 
 The user-facing response never exposes profile scores, internal field names or
 reasoning traces. Development traces contain only observable state and actions.
@@ -30,6 +30,7 @@ from scripts.core.onboarding_engine import evaluate_onboarding
 from scripts.core.question_policy import select_questions
 from scripts.evolution.evolution_engine import EvolutionEngine
 from scripts.improvement.improvement_engine import ImprovementEngine
+from scripts.growth_orchestrator import GrowthOrchestrator
 from scripts.io_utils import result, run_cli
 from scripts.memory.memory_engine import MemoryEngine
 from scripts.proactive.proactive_engine import ProactiveEngine
@@ -110,14 +111,14 @@ def _record_questions(history: dict[str, Any], fields: Sequence[str], *, questio
 
 
 def _memory_candidate(user_id: str, key: str, item: Mapping[str, Any]) -> dict[str, Any]:
-    importance = 1.0 if key in {"preferred_name", "career_direction", "direction_status"} else 0.8
+    importance = 1.0 if key in {"preferred_name", "career_direction", "direction_status", "target_city", "target_job"} else 0.8
     return {
         "candidate_id": f"profile-{key}", "record_id": f"profile-{key}", "user_id": user_id,
         "memory_type": "explicit_profile" if key in {"preferred_name", "preferred_name_usage"} else "profile_fact",
         "content": {"key": key, "value": item.get("value"), "user_explicit": True, "confirmed": True},
         "importance": importance, "stability": 0.9, "future_relevance": 0.9,
         "user_explicitness": 1.0, "recurrence": 0.5, "confidence": float(item.get("confidence", 1.0)),
-        "task_value": 0.9, "user_intent": "remember",
+        "task_value": 0.9, "user_intent": "",
     }
 
 
@@ -173,6 +174,7 @@ def _exam_plan(course: str, materials: list[str], exam_days: int | None) -> dict
 class CompassEngine:
     def __init__(self, runtime_dir: str | Path | None = None) -> None:
         self.runtime = Path(runtime_dir or ROOT / "runtime")
+        self.growth = GrowthOrchestrator(runtime_dir=self.runtime)
 
     def _paths(self, user_id: str) -> tuple[Path, Path, Path]:
         user_root = self.runtime / "users" / _safe_user_key(user_id)
@@ -199,8 +201,10 @@ class CompassEngine:
 
         archive = load_archive(archive_path, user_id=user_id)
         memory = MemoryEngine(memory_path)
+        persistent_context = memory.load_user_context(user_id=user_id, query=message, top_k=5)
         recalled = memory.load(user_id=user_id, query=message, top_k=5)["data"]
-        statuses["MEMORY_LOAD"] = f"{recalled['count']}_records"
+        persistent_count = sum(bool(persistent_context.get(key)) for key in ("profile", "goal", "competency", "growth_state"))
+        statuses["MEMORY_LOAD"] = f"{persistent_count}_structured_{recalled['count']}_records"
         flow.extend(["load_memory", "detect_new_or_returning_user"])
 
         intent = route_intent(message, attachments)
@@ -210,13 +214,18 @@ class CompassEngine:
             archive = empty_archive(user_id)
             save_archive(archive_path, archive)
             response = {"current_judgment": "已清空应用层长期记忆和成长档案", "why": "忘记请求优先于任何建档或规划", "do_now": [], "next_step": "需要时可以重新开始", "text": "已按你的要求清空应用层长期记忆和成长档案。需要时我们可以重新开始。"}
-            statuses.update({"STATE": "MEMORY_REVIEW", "CONTEXT": "cleared", "BUSINESS": "forget", "MEMORY_WRITE": "hard_delete", "ARCHIVE": "saved_v21", "RESPONSE": "built"})
+            statuses.update({"STATE": "MEMORY_REVIEW", "CONTEXT": "cleared", "BUSINESS": "forget", "MEMORY_WRITE": "hard_delete", "ARCHIVE": "saved_v22", "RESPONSE": "built"})
             return result(MODULE, {"intent": intent.value, "state": "MEMORY_REVIEW", "response": response, "text": response["text"], "trace": _trace(statuses), "safety": safety, "memory_change": forgotten, "archive": archive})
 
         incoming = extract_known_facts(message, request)
         facts = merge_known_facts(archive.get("known_facts"), incoming)
         archive["known_facts"] = facts
         archive["profile"].update(_profile_from_facts(facts))
+        profile_updates = _profile_from_facts(facts)
+        if profile_updates:
+            profile_updates["preferred_name"] = fact_value(facts, "preferred_name", archive.get("preferred_name", ""))
+            profile_updates["weekly_available_hours"] = profile_updates.get("weekly_hours", persistent_context.get("profile", {}).get("weekly_available_hours", 0))
+            memory.persist_turn(user_id=user_id, profile_updates=profile_updates)
         if fact_value(incoming, "direction_status") == "changed":
             current_plan = dict(archive.get("academic", {}).get("current_plan") or {})
             if current_plan:
@@ -227,6 +236,16 @@ class CompassEngine:
                 confirmed_goal.update({"status": "invalidated", "invalidated_reason": "user_changed_direction"})
                 archive["career"]["confirmed_goal"] = confirmed_goal
         flow.extend(["preferred_name", "parse_current_message", "update_known_facts"])
+
+        growth_cycle: dict[str, Any] | None = None
+        target_city, target_job = fact_value(facts, "target_city", ""), fact_value(facts, "target_job", "")
+        growth_operation = str(request.get("growth_operation", ""))
+        if growth_operation in {"market", "gap", "plan", "full_cycle"} or request.get("jds") or request.get("public_urls") or (target_city and target_job) or intent in {Intent.RECRUITMENT_ANALYSIS, Intent.GAP_ANALYSIS, Intent.CAREER_GAP}:
+            growth_request = {**dict(request), "target_city": request.get("target_city") or target_city, "target_job": request.get("target_job") or target_job, "job_search_time": request.get("job_search_time") or fact_value(facts, "deadline_time", ""), "message": message}
+            growth_cycle = self.growth.market_learning_cycle(user_id=user_id, request=growth_request, archive=archive, memory=memory, context=persistent_context)
+            archive.setdefault("extensions", {})["growth_cycle"] = growth_cycle
+            persistent_context = memory.load_user_context(user_id=user_id, query=message, top_k=5)
+            statuses["RESEARCH"] = growth_cycle["market"].get("market_data_status", "insufficient")
 
         onboarding = evaluate_onboarding(archive_exists=archive_exists, archive=archive, facts=facts, intent=intent.value)
         stage = onboarding["stage"]
@@ -272,7 +291,8 @@ class CompassEngine:
                 _record_questions(history, selection["asked_fields"], question_only=False)
                 statuses["BUSINESS"] = "stage_and_minimum_questions"
 
-        if sufficiency["action_ready"] and action not in {MentorAction.ASK_NAME, MentorAction.ASK_MINIMUM_PROFILE, MentorAction.ASK_BLOCKING_FIELD}:
+        tutor_ready = intent in {Intent.START_LEARNING, Intent.CONTINUE_LEARNING, Intent.SUBMIT_EXERCISE, Intent.SUBMIT_EVIDENCE} and bool(archive.get("academic", {}).get("current_plan", {}).get("weekly_core_tasks") or archive.get("extensions", {}).get("current_tutor"))
+        if (sufficiency["action_ready"] or tutor_ready) and action not in {MentorAction.ASK_NAME, MentorAction.ASK_MINIMUM_PROFILE, MentorAction.ASK_BLOCKING_FIELD}:
             cold_start = not bool(archive.get("onboarding_complete"))
             daily = fact_value(facts, "daily_learning_hours")
             weekly = fact_value(facts, "weekly_learning_hours")
@@ -289,7 +309,35 @@ class CompassEngine:
             archive["realistic_capacity"] = capacity
             statuses["BUSINESS"] = action.value
 
-            if intent is Intent.STRATEGY_FEEDBACK:
+            if intent in {Intent.START_LEARNING, Intent.CONTINUE_LEARNING}:
+                tutor = self.growth.start_tutor(message=message, request=request, archive=archive, context=persistent_context, memory=memory, user_id=user_id, resume=intent is Intent.CONTINUE_LEARNING)
+                business["tutor"] = tutor
+                statuses["BUSINESS"] = tutor["action"]
+                if tutor.get("status") == "no_task":
+                    text = str(tutor["message"])
+                else:
+                    lesson = tutor.get("lesson", {})
+                    exercise = tutor.get("exercise", {})
+                    text = f"现在进入 {tutor.get('skill', '当前能力')} 的陪学环节，不重新生成计划。\n{lesson.get('explanation', '')}\n{lesson.get('example', '')}\n练习：{exercise.get('prompt', '继续当前练习')}"
+                response = {"current_judgment": "进入 AI Tutor", "why": "当前输入是开始或继续学习，不是重新规划", "do_now": [tutor.get("exercise", {}).get("prompt", "继续当前学习")], "next_step": tutor.get("next_action", "继续学习"), "mentor_sections": {"tutor": tutor}, "text": text}
+            elif intent in {Intent.SUBMIT_EXERCISE, Intent.SUBMIT_EVIDENCE}:
+                assessed = self.growth.assess(request=request, archive=archive, context=persistent_context, memory=memory, user_id=user_id)
+                business["assessment"] = assessed
+                statuses["BUSINESS"] = "ASSESS_LEARNING"
+                text = assessed.get("assessment", {}).get("feedback", "当前没有可验收的活动练习。")
+                if assessed.get("replanned"):
+                    text += " 已形成能力证据、更新 Competency，并据此重新计算 Gap 与计划。"
+                response = {"current_judgment": "学习成果已验收" if assessed.get("assessment") else "暂无活动练习", "why": "只有通过可观察验收的结果才会更新已验证能力", "do_now": [], "next_step": "继续下一项计划任务" if assessed.get("replanned") else "补齐未通过的验收项", "mentor_sections": {"assessment": assessed}, "text": text}
+            elif growth_cycle is not None:
+                business["growth_cycle"] = growth_cycle
+                market, plan = growth_cycle["market"], growth_cycle["plan"]
+                tasks = plan.get("weekly_core_tasks", [])
+                if tasks:
+                    text = f"已按 {market.get('target_city')} {market.get('target_job_normalized')} 的可追溯样本完成市场→Gap→计划计算。\n{tasks[0]['why']}\n本周先做：{tasks[0]['title']}"
+                else:
+                    text = f"已生成动态招聘查询，但当前市场数据状态为 {market.get('market_data_status', 'insufficient')}。没有足够真实样本时，我不会虚构岗位比例；你可以提供公开招聘链接或完整 JD。"
+                response = {"current_judgment": "已完成市场驱动分析" if tasks else "招聘样本暂时不足", "why": plan.get("notice", ""), "do_now": [item.get("title", "") for item in tasks[:3]], "next_step": "开始第一项 Tutor 任务" if tasks else "补充公开来源或用户 JD", "mentor_sections": {"market_driven_learning": growth_cycle}, "text": text}
+            elif intent is Intent.STRATEGY_FEEDBACK:
                 improvement = ImprovementEngine(strategy_dir).observe(
                     user_id=user_id, task_id=str(request.get("task_id", "current-turn")), category="plan_feedback",
                     signal=str(request.get("signal", "plan.overload" if "太多" in message else message)), context={"stage": stage["stage"]},
@@ -304,8 +352,12 @@ class CompassEngine:
                 statuses["IMPROVEMENT"] = "observed"
                 if improvement.get("suggestion"):
                     suggestion = improvement["suggestion"]
-                    business["evolution_candidate"] = EvolutionEngine(strategy_dir / "evolution").propose(gene="feedback_adaptation", capsule={"change": suggestion["change"], "requires_trial": True}, evidence=[str(suggestion["pattern_key"])])
-                    statuses["EVOLUTION"] = "candidate_created"
+                    evolver = EvolutionEngine(strategy_dir / "evolution", acceptance_improvement_threshold=0.05)
+                    candidate = evolver.propose(gene="feedback_adaptation", capsule={"change": suggestion["change"], "requires_trial": True}, evidence=[str(suggestion["pattern_key"])])
+                    trial = evolver.start_trial(candidate["strategy_id"], metric="completion_rate", baseline=float(persistent_context.get("growth_state", {}).get("completion_rate", 0.0)))
+                    business["evolution_candidate"] = candidate
+                    business["evolution_trial"] = trial
+                    statuses["EVOLUTION"] = "trial_started"
             elif action is MentorAction.RUN_PROGRESS_REVIEW:
                 response = _progress_response(name, archive, usage)
                 business["recalled"] = recalled
@@ -367,14 +419,58 @@ class CompassEngine:
         archive["memory_change_summary"] = memory_change
         archive["profile_sufficiency"] = sufficiency
         archive["last_action"] = business.get("action", archive.get("last_action", ""))
-        proactive = ProactiveEngine().check(signals={"exam_days": fact_value(facts, "exam_days"), "missed_tasks": request.get("missed_tasks", 0), "stress": request.get("stress", 0)})
+        persistent_write = memory.persist_turn(
+            user_id=user_id,
+            profile_updates={**archive.get("profile", {}), "preferred_name": archive.get("preferred_name", "")},
+            goal_updates=archive.get("career", {}).get("confirmed_goal", {}),
+            growth_updates={
+                "current_stage": archive.get("current_growth_stage", ""),
+                "current_plan": archive.get("academic", {}).get("current_plan", {}),
+                "active_tasks": archive.get("academic", {}).get("current_plan", {}).get("weekly_core_tasks", []),
+                **({"current_lesson": archive.get("extensions", {}).get("current_tutor", {}).get("lesson", {})} if archive.get("extensions", {}).get("current_tutor") else {}),
+            },
+        )
+        business["persistent_memory"] = {"stored": persistent_write.get("stored", False), "health": memory.health()}
+        proactive_history = list(archive.setdefault("extensions", {}).get("proactive_feedback", []))
+        last_prompt = dict(archive["extensions"].get("last_proactive_prompt", {}))
+        progress = {**persistent_context.get("growth_state", {}), **dict(request.get("progress_signals") or {})}
+        market_state = archive.get("career", {}).get("recruitment_snapshot", {})
+        previous_goal = persistent_context.get("goal", {})
+        target_changed = any(
+            bool(previous_goal.get("target_city" if key == "target_city" else "target_job_raw") or previous_goal.get("target_job_normalized" if key == "target_job" else ""))
+            and fact_value(incoming, key) != (previous_goal.get("target_city") if key == "target_city" else previous_goal.get("target_job_raw") or previous_goal.get("target_job_normalized"))
+            for key in ("target_city", "target_job") if key in incoming
+        )
+        proactive_signals = {
+            "exam_days": fact_value(facts, "exam_days"), "missed_tasks": request.get("missed_tasks", progress.get("missed_tasks", 0)),
+            "stress": request.get("stress", 0), "completion_rate": request.get("completion_rate", progress.get("completion_rate")),
+            "actual_hours_ratio": request.get("actual_hours_ratio", progress.get("actual_hours_ratio")), "job_search_days": request.get("job_search_days"),
+            "target_changed": target_changed, "market_snapshot_stale": request.get("market_snapshot_stale", market_state.get("stale", False)),
+            "gap_stalled_weeks": request.get("gap_stalled_weeks", progress.get("gap_stalled_weeks", 0)),
+            "weeks_without_evidence": request.get("weeks_without_evidence", progress.get("weeks_without_evidence", 0)),
+        }
+        proactive_engine = ProactiveEngine()
+        proactive = proactive_engine.check(signals=proactive_signals, last_prompt_at=str(last_prompt.get("prompted_at", "")), feedback_history=proactive_history)
+        feedback_value = str(request.get("proactive_feedback", ""))
+        if feedback_value:
+            prompt_for_feedback = last_prompt or proactive
+            feedback = proactive_engine.feedback(prompt_for_feedback, feedback_value)
+            proactive_history.append(feedback)
+            archive["extensions"]["proactive_feedback"] = proactive_history[-20:]
+            business["proactive_feedback"] = feedback
+            if feedback_value == "rejected":
+                business["proactive_improvement"] = ImprovementEngine(strategy_dir).observe_event(event_type="correction", pattern_key=f"proactive.false-positive.{feedback.get('reason', 'unknown')}", summary="主动建议被用户拒绝，需要降低同类触发频率", area="proactive", user_id=user_id, task_id=str(request.get("turn_id", "current-turn")))
+        if proactive.get("should_prompt"):
+            archive["extensions"]["last_proactive_prompt"] = proactive
+            response["text"] = f"{response['text']}\n\n主动建议：{proactive['message']}"
+            response.setdefault("mentor_sections", {})["proactive_suggestion"] = proactive["message"]
         business["proactive"] = proactive
         statuses["PROACTIVE"] = "prompt" if proactive["should_prompt"] else proactive["reason"]
         statuses.setdefault("REVIEW", "quality_checked")
         statuses.setdefault("RESEARCH", "not_requested")
         statuses.setdefault("IMPROVEMENT", "not_triggered")
         statuses.setdefault("EVOLUTION", "not_triggered")
-        statuses["ARCHIVE"] = "saved_v21"
+        statuses["ARCHIVE"] = "saved_v22"
         statuses["RESPONSE"] = "built"
         flow.extend(["execute_business_engine", "mentor_diagnosis", "goal_planning", "weekly_capacity", "plan_generation", "improvement", "evolution", "proactive", "memory_write", "archive_update", "mentor_response"])
         save_archive(archive_path, archive)

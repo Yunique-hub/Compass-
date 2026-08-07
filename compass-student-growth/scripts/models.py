@@ -374,7 +374,7 @@ class MemoryRecord(MemoryCandidate):
 
 @dataclass
 class GrowthArchive(Serializable):
-    archive_version: str = "2.1.0"
+    archive_version: str = "2.2.0"
     updated_at: str = ""
     explicit_profile: dict[str, Any] = None  # type: ignore[assignment]
     career_directions: list[dict[str, Any]] = None  # type: ignore[assignment]

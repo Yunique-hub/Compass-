@@ -44,7 +44,7 @@ def _issues(plan: Mapping[str, Any], confirmation: Mapping[str, Any], *, synthet
     text = str(plan)
     if synthetic and any(phrase in text for phrase in ("当前杭州真实市场", "当前企业普遍要求", "真实平均薪资", "最新岗位趋势")):
         errors.append({"code": "SYNTHETIC_MARKET_CLAIM", "message": "合成数据被错误描述为真实市场。"})
-    if synthetic and "仅用于功能测试，不代表当前市场" not in text:
+    if synthetic and "仅用于功能测试，不代表真实招聘市场" not in text:
         warnings.append({"code": "SYNTHETIC_NOTICE_MISSING", "message": "建议在正式输出中醒目标注合成数据用途。"})
     return errors, warnings
 

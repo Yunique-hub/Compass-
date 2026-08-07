@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-VERSION = "2.1.0"
+VERSION = "2.2.0"
 
 
 def empty_archive(user_id: str = "") -> dict[str, Any]:

@@ -70,7 +70,7 @@ def run_demo() -> dict[str, Any]:
         "recruitment_analysis": recruitment["data"], "competency_gaps": gaps["data"],
         "formal_plan": plan["data"], "growth_archive": archive.to_dict(),
         "memory_change_summary": archive.memory_change_summary,
-        "synthetic_data_notice": "仅用于功能测试，不代表当前市场；不足以得出杭州本地市场结论。",
+        "synthetic_data_notice": "仅用于功能测试，不代表真实招聘市场；不足以得出杭州本地市场结论。",
         "completed_steps": 16,
     }
     warnings = [*recruitment["warnings"], *plan["warnings"]]

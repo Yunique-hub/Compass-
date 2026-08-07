@@ -7,6 +7,8 @@ from typing import Any, Sequence
 
 
 class Intent(str, Enum):
+    ONBOARDING = "ONBOARDING"
+    PROFILE_UPDATE = "PROFILE_UPDATE"
     CAREER_EXPLORE = "CAREER_EXPLORE"
     CAREER_CONFIRM = "CAREER_CONFIRM"
     DESTINATION_CONFIRM = "DESTINATION_CONFIRM"
@@ -25,6 +27,14 @@ class Intent(str, Enum):
     MEMORY_UPDATE = "MEMORY_UPDATE"
     MEMORY_FORGET = "MEMORY_FORGET"
     STRATEGY_FEEDBACK = "STRATEGY_FEEDBACK"
+    TARGET_CITY_UPDATE = "TARGET_CITY_UPDATE"
+    TARGET_JOB_UPDATE = "TARGET_JOB_UPDATE"
+    GAP_ANALYSIS = "GAP_ANALYSIS"
+    PLAN_ADJUSTMENT = "PLAN_ADJUSTMENT"
+    START_LEARNING = "START_LEARNING"
+    CONTINUE_LEARNING = "CONTINUE_LEARNING"
+    SUBMIT_EXERCISE = "SUBMIT_EXERCISE"
+    SUBMIT_EVIDENCE = "SUBMIT_EVIDENCE"
     GENERAL_SUPPORT = "GENERAL_SUPPORT"
 
 
@@ -48,6 +58,14 @@ def route_intent(message: str, attachments: Sequence[Any] | None = None) -> Inte
         return Intent.MEMORY_UPDATE
     if _contains(text, "太多", "做不完", "不喜欢长视频", "计划不现实", "周末没完成"):
         return Intent.STRATEGY_FEEDBACK
+    if _contains(text, "提交练习", "这是我的答案", "练习完成", "实验完成", "完成域创建"):
+        return Intent.SUBMIT_EXERCISE
+    if _contains(text, "提交证据", "这是我的作品", "这是项目链接"):
+        return Intent.SUBMIT_EVIDENCE
+    if _contains(text, "继续学习", "继续这节", "接着学"):
+        return Intent.CONTINUE_LEARNING
+    if _contains(text, "开始学习", "开始学", "现在学", "带我学"):
+        return Intent.START_LEARNING
     if _contains(text, "错题", "答错", "做错"):
         return Intent.MISTAKE_REVIEW
     if _contains(text, "出题", "练习题", "刷题"):
@@ -65,7 +83,7 @@ def route_intent(message: str, attachments: Sequence[Any] | None = None) -> Inte
     if _contains(text, "招聘要求", "岗位要求", "现在杭州", "市场需要"):
         return Intent.RECRUITMENT_ANALYSIS
     if _contains(text, "能力差距", "还缺什么", "短板"):
-        return Intent.CAREER_GAP
+        return Intent.GAP_ANALYSIS
     if _contains(text, "本周计划", "每周计划", "weekly"):
         return Intent.WEEKLY_PLAN
     if _contains(text, "学习计划", "成长计划", "大学学习"):
@@ -77,4 +95,3 @@ def route_intent(message: str, attachments: Sequence[Any] | None = None) -> Inte
     if _contains(text, "不知道毕业", "适合什么工作", "职业方向", "挺迷茫", "迷茫"):
         return Intent.CAREER_EXPLORE
     return Intent.GENERAL_SUPPORT
-

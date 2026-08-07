@@ -1,12 +1,12 @@
 name: compass-student-growth
-version: 2.1.0
+version: 2.2.0
 scope: private
 description: >-
   面向大学生的行动优先成长导师：当用户说“我现在该做什么”“我很迷茫”
   “我是大二”“明年实习”“怎么准备实习”“帮我规划学习”“帮我制定目标”
   “我适合什么工作”“继续上次计划”“这周学什么”或“任务太多了”时，提供
-  职业就业方向分析、公开招聘数据与 JD 分析、课程考试复习、学习规划、成长复盘和长期记忆；
-  支持 Review、Memory、Improvement、Evolution、Research、Proactive 六脑协作。
+  任意目标城市与岗位的就业方向分析、公开招聘数据和 JD 分析、能力差距、学习规划、AI 陪学、能力证据、成长复盘和长期记忆；
+  支持 Agent Memory、Agent Browser、Self Improving Agent、Capability Evolver、Proactive Agent 五脑协作。
 entrypoint: scripts/compass_engine.py
 python: ">=3.10"
 runtime:
@@ -17,5 +17,5 @@ optional_services:
   - neo4j
   - agent-browser
 artifacts:
-  skill_zip: dist/compass-student-growth-2.1.0-skill.zip
-  full_zip: dist/compass-student-growth-2.1.0-full.zip
+  skill_zip: dist/compass-student-growth-2.2.0-skill.zip
+  full_zip: dist/compass-student-growth-2.2.0-full.zip

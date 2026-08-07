@@ -1,1 +1,1 @@
-"""Executable Compass 2.1 interaction demonstrations."""
+"""Executable Compass 2.2 interaction demonstrations."""

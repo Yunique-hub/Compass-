@@ -39,7 +39,7 @@ def should_include(path: Path, output: Path, mode: str) -> bool:
 def pack(output: Path, *, mode: str = "skill") -> dict[str, Any]:
     if mode not in {"skill", "full"}:
         return result(MODULE, ok=False, errors=[{"code": "INVALID_MODE", "message": mode}])
-    directory_check = validate_directory(ROOT)
+    directory_check = validate_directory(ROOT, mode=mode)
     if not directory_check["ok"]:
         return result(MODULE, ok=False, errors=directory_check["errors"], warnings=directory_check["warnings"])
     output = output if output.is_absolute() else ROOT / output
@@ -48,7 +48,7 @@ def pack(output: Path, *, mode: str = "skill") -> dict[str, Any]:
         for path in sorted(ROOT.rglob("*")):
             if path.is_file() and should_include(path, output, mode):
                 archive.write(path, path.relative_to(ROOT).as_posix())
-    zip_check = validate_zip(output)
+    zip_check = validate_zip(output, mode=mode)
     return result(MODULE, {"output": str(output), "mode": mode, "size_bytes": output.stat().st_size, "directory_validation": directory_check["data"], "zip_validation": zip_check["data"]}, ok=zip_check["ok"], warnings=directory_check["warnings"] + zip_check["warnings"], errors=zip_check["errors"])
 
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument("--mode", choices=("skill", "full"), default="skill")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    output = args.output or Path(f"dist/compass-student-growth-2.1.0-{args.mode}.zip")
+    output = args.output or Path(f"dist/compass-student-growth-2.2.0-{args.mode}.zip")
     payload = pack(output, mode=args.mode)
     write_json(payload)
     raise SystemExit(0 if payload["ok"] else 2)

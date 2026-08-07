@@ -1,0 +1,6 @@
+{
+  "passing_score": 0.7,
+  "beginner_threshold": 0.3,
+  "advanced_threshold": 0.75,
+  "maximum_lesson_minutes": 30
+}

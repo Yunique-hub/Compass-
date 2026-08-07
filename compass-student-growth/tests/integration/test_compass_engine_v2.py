@@ -20,7 +20,7 @@ def test_engine_runs_exact_flow_and_auto_scores_directions(tmp_path: Path) -> No
     assert output["intent"] == "CAREER_EXPLORE"
     assert len(output["response"]["details"]["business"]["directions"]) >= 2
     assert "scores" not in output
-    assert output["archive"]["archive_version"] == "2.1.0"
+    assert output["archive"]["archive_version"] == "2.2.0"
 
 
 def test_engine_safety_stops_before_business(tmp_path: Path) -> None:

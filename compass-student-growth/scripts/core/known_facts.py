@@ -121,9 +121,15 @@ def extract_known_facts(message: str, request: Mapping[str, Any] | None = None) 
     if "python" in lowered and any(term in text for term in ("项目经验", "简单项目", "做过项目")):
         facts["python_project_experience"] = _fact(True)
 
-    city_match = re.search(r"(?:目标城市(?:是|为)?|想去|希望去|在)(北京|上海|广州|深圳|杭州|南京|成都|武汉|西安|苏州|重庆|长沙|天津)", text)
+    city_match = re.search(r"(?:目标城市(?:是|为)?|准备去|毕业(?:后)?(?:准备|想)?去|想去|希望去|去)\s*([\u4e00-\u9fff]{2,12}?)(?:市)?(?=做|从事|当|找|的|\s|，|。|$)|在\s*([\u4e00-\u9fff]{2,12}市)(?=做|从事|当|找)", text)
     if city_match:
-        facts["target_city"] = _fact(city_match.group(1))
+        facts["target_city"] = _fact((city_match.group(1) or city_match.group(2)).removesuffix("市"))
+
+    target_job_match = re.search(r"(?:目标(?:岗位|职位|工作)?(?:是|为)?|想做|做|从事|当|找(?:一份)?)([A-Za-z0-9+#.\-\u4e00-\u9fff /]{2,40}?)(?=岗位|职位|工作|方向|[，。；;！!？?]|$)", text, re.I)
+    if target_job_match:
+        target_job = target_job_match.group(1).strip("，。；;、：: ")
+        if target_job:
+            facts["target_job"] = _fact(target_job)
 
     course = str(request.get("course", "")).strip()
     if course:
@@ -136,6 +142,10 @@ def extract_known_facts(message: str, request: Mapping[str, Any] | None = None) 
         facts["last_actual_hours"] = _fact(float(request["actual_hours"]))
     if request.get("completed_weeks") is not None:
         facts["completed_weeks"] = _fact(int(request["completed_weeks"]))
+    if request.get("target_city"):
+        facts["target_city"] = _fact(str(request["target_city"]).strip())
+    if request.get("target_job"):
+        facts["target_job"] = _fact(str(request["target_job"]).strip())
     return facts
 
 

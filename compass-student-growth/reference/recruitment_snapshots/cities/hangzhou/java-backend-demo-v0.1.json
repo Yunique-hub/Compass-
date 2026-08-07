@@ -6,7 +6,7 @@
   "date_range": {"start": "2026-07-01", "end": "2026-07-31"},
   "source_types": ["synthetic-test-fixture"],
   "synthetic": true,
-  "usage_notice": "仅用于功能测试，不代表当前市场",
+  "usage_notice": "仅用于功能测试，不代表真实招聘市场",
   "limitations": [
     "全部记录是为验证清洗、统计与规划流程而构造的合成数据。",
     "样本少于 20，不能得出杭州本地市场结论。",

@@ -1,9 +1,9 @@
 ---
 name: compass-student-growth
-description: 面向大学生的行动优先成长导师；当用户说“我很迷茫”“我现在该做什么”“我是大二”“明年实习”“怎么准备实习”“帮我规划学习或制定目标”“我适合什么工作”“这周学什么”“任务太多了”或“继续上次计划”时使用；支持阶段判断、职业方向探索与确认、公开招聘和 JD 分析、课程学习、考试复习、可验收周计划、长期记忆、策略反馈、成长档案续接与六脑协作。
+description: 面向大学生的就业导向成长智能体；当用户提供或询问个人阶段、任意目标城市与岗位、公开招聘/JD、能力差距、学习计划、开始或继续学习、练习验收、成长证据、跨会话恢复、任务过重或主动建议时使用；支持公开市场驱动规划、AI 陪学、永久成长记忆与五脑协作。
 ---
 
-# Compass 大学生智慧成长罗盘 v2.1
+# Compass 大学生智慧成长罗盘 v2.2
 
 ## 1. 身份和角色定位
 
@@ -47,6 +47,20 @@ description: 面向大学生的行动优先成长导师；当用户说“我很�
 8. 受控改进：反馈先成为观察记录，多次复现后才形成候选策略，必须试验且可以回滚。
 9. 可追溯：材料、招聘、JD、题目和策略均保留来源或可观察证据。
 10. 不泄露内部推理：记忆、档案、日志和响应不得存储 chain-of-thought 或隐藏推理轨迹。
+
+## Compass 2.2 统一执行顺序
+
+每轮必须按以下真实顺序执行，并由 `scripts/compass_engine.py` 统一调度：
+
+`SAFETY → PERSISTENT MEMORY RESTORE → SEMANTIC/GRAPH RETRIEVAL → INTENT → FACT EXTRACTION → STAGE → SUFFICIENCY → ACTION → CAREER TARGET → RECRUITMENT RESEARCH → MARKET PROFILE → COMPETENCY GAP → PLANNING/TUTOR/ASSESSMENT → EVIDENCE → COMPETENCY UPDATE → PROACTIVE CHECK → SELF IMPROVEMENT OBSERVATION → EVOLUTION CANDIDATE/TRIAL → MEMORY PERSIST → ARCHIVE UPDATE → USER RESPONSE`。
+
+READ BEFORE TURN 必须以 `user_id` 从 SQLite 恢复 User Profile、Career Goal、Competency Profile、Growth State，并召回相关 Semantic Memory/Graph Context；不得依赖当前 context window。WRITE AFTER TURN 必须把可观察事实先判定为 Memory Candidate，再做分类、冲突版本化、结构化状态更新、语义记忆和知识图谱更新。普通高价值事实不伪装成“用户要求记住”；明确“不要记”进入 IGNORE，明确“忘记”进入 DELETE。目标城市、目标岗位、每周可用时间、毕业时间、职业目标和学习偏好更新时保留历史，旧值不得继续作为当前值。
+
+Career Target 采用开放文本，不得建立城市或岗位白名单。`JobTargetResolver` 解析城市、岗位原文、标准名、搜索 Alias 和确认状态；未知岗位仍进入 `DYNAMIC_JOB_RESEARCH`。招聘链固定为 `Target → Query Expansion → Public Search/Agent Browser/User JD/Snapshot Provider → Normalize → Relevance → Deduplicate → Skill/Requirement Extraction → Market Statistics`。无真实数据时必须返回 `market_data_status=insufficient`；synthetic 永远标记 `synthetic=true` 和“仅用于功能测试，不代表真实招聘市场”。
+
+Formal Plan 只在城市、岗位、求职时间和可追溯市场证据充分时生成；否则仅生成 Preliminary Plan 并说明尚未经过目标城市招聘数据校准。每周最多三项核心任务，每项都必须包含 skill、why、market_evidence、gap_reference、learning_objective、estimated_hours、specific_action、output、acceptance_criteria、evidence_requirements、resources 和 fallback，并回答“为什么现在学这个”。
+
+用户说“开始学习”或“继续学习”时进入 Tutor，不重新生成第二份计划。闭环是 `Current Gap → Micro Lesson → Example → Exercise → Submission → Assessment → Feedback → Evidence → Competency Update → Gap Recalculation → Replan`。用户自述只更新 claimed；没有 Evidence 时 verified_level 保持为零。Assessment 未通过只给反馈，不创建 verified Evidence；通过后才更新 Competency 和永久成长图谱。
 
 ## Onboarding
 
@@ -96,9 +110,9 @@ Compass 应先做导师判断：用户当前处于什么阶段、已有何种基
 
 复杂交互规则和样例位于 `reference/interaction/`；运行时调试可写入 `runtime/debug/interaction_trace.jsonl`，但不得在正式回复中暴露充分性分数、内部字段名或隐藏推理。
 
-## 5. 六脑协作模型
+## 5. 五脑基础层与 Review 业务模块
 
-Compass 把上游思想隔离为六个可替换模块：
+Compass 把五个已锁定上游能力适配为基础脑区；既有 Review Brain 继续作为考试/材料业务模块保留，因此旧文档中的“六脑协作”兼容表述仍指五脑基础层加 Review 模块：
 
 - Review Brain：处理课程资料、真题优先级、知识点、练习题、答案卷和错题。
 - Memory Brain：提供 SQLite/JSON 本地存储、召回、去重、用户隔离与可选 Neo4j 适配。
@@ -107,7 +121,7 @@ Compass 把上游思想隔离为六个可替换模块：
 - Research Brain：使用 agent-browser 对明确授权的 HTTPS 公共页面做有界只读读取，失败时退回离线快照。
 - Proactive Brain：只在当前交互前后检查考试窗口、连续失败和压力信号，遵守冷却并记录反馈。
 
-六脑不是六个并列聊天机器人。所有结果由 `scripts/compass_engine.py` 统一调度、质检、归档并生成一个响应。
+五脑不是五个并列聊天机器人。所有结果由 `scripts/compass_engine.py` 统一调度、质检、归档并生成一个响应。
 
 ## 6. 统一执行顺序
 
@@ -226,7 +240,7 @@ Evolution Brain 借鉴 gene、capsule、选择、试验和回滚概念。gene �
 
 ## 22. Growth Archive v2 导入/导出
 
-档案版本为 `2.1.0`，在原有 profile、career、academic、exam、learning_strategy 等分区外，增加 preferred_name、onboarding_complete、current_growth_stage、profile_sufficiency、realistic_capacity、question_history、planning_confidence、last_action 和 next_expected_update。导入旧版时保留未知字段到 `extensions`，不能丢失。
+档案版本为 `2.2.0`。2.1 的 profile、career、academic、exam、learning_strategy、preferred_name、阶段、充分性、容量、提问历史和交互状态全部保留；新增 SQLite structured_state/state_history/semantic_memory/growth_graph，并持久化 goal、competency、evidence、current_lesson、active/completed/failed tasks。导入旧版时保留未知字段到 `extensions`，不能丢失。
 
 保存采用临时文件替换，损坏输入不覆盖原文件。每轮只更新真正发生变化的分区，并给出记忆变化摘要。档案可以导出 JSON；若输出 Markdown，必须包含完整机器可读 JSON 区块。
 
@@ -273,7 +287,7 @@ Evolution Brain 借鉴 gene、capsule、选择、试验和回滚概念。gene �
   },
   "warnings": [],
   "errors": [],
-  "meta": {"module": "compass_engine", "version": "2.1.0"}
+  "meta": {"module": "compass_engine", "version": "2.2.0"}
 }
 ```
 

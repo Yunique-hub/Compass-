@@ -94,7 +94,8 @@ def test_formal_plan_budget_max_three_and_complete_fields() -> None:
     gaps = build_gaps(stats, {})["data"]["gaps"]
     output = generate_plan(confirmation(), gaps, weekly_hours=7, snapshot_version="v1", synthetic=True)
     plan = output["data"]["plan"]
-    assert output["data"]["formal_plan_generated"] is True
+    assert output["data"]["formal_plan_generated"] is False
+    assert plan["mode"] == "preliminary"
     assert len(plan["weekly_core_tasks"]) <= 3
     assert plan["total_weekly_hours"] <= 7 * 0.85
     for task in plan["weekly_core_tasks"]:

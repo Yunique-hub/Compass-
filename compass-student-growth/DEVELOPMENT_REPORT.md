@@ -1,4 +1,159 @@
-# Compass 2.1 Interaction Optimization Report
+# Compass 2.2.0 Development Report
+
+## Architecture Summary
+
+Compass 2.1.0 已具备行动优先交互、阶段判断、初步计划、SQLite 记录记忆、考试 Review、自改进/演化/主动建议雏形，以及六份本地锁定上游快照。2.2.0 没有重建项目或删除成熟模块，而是在现有 `scripts/compass_engine.py` 上完成核心架构升级：
+
+- 记忆从通用记录召回升级为 Profile、Career Goal、Competency、Growth State、Semantic Memory 五类永久状态；SQLite 是 canonical store，Neo4j Agent Memory 是可选图谱/语义复制层。
+- 城市和岗位从有限识别升级为开放文本 Target Resolver + Job Normalizer + Query Expansion；Alias 是可成长缓存，不是白名单。
+- 招聘从单一快照/JD 脚本升级为 Public Search、Agent Browser、User JD、Versioned Snapshot 的 Provider 架构；没有真实数据时返回 `insufficient`，不造市场百分比。
+- 学习从“生成计划”升级为 Market → Gap → Plan → Tutor → Assessment → Evidence → Competency → Replan 的证据闭环。
+- Self Improving、Capability Evolver、Proactive 不再是孤立模块：重复的去标识化 Pattern 可产生策略 Candidate/Trial，主动建议反馈可继续进入改进链；运行时禁止修改源码和后台假推送。
+- Review Brain 作为 2.1 的成熟考试/材料业务模块继续保留；2.2 的“五脑”专指 Agent Memory、Agent Browser、Self Improving Agent、Capability Evolver、Proactive Agent 五个基础能力层。
+
+统一运行顺序：
+
+```text
+SAFETY → PERSISTENT MEMORY RESTORE → SEMANTIC/GRAPH RETRIEVAL
+→ INTENT/FACT/STAGE/SUFFICIENCY/ACTION → CAREER TARGET
+→ RECRUITMENT → MARKET → GAP → PLAN/TUTOR/ASSESSMENT
+→ EVIDENCE → COMPETENCY → REPLAN → PROACTIVE
+→ SELF IMPROVEMENT → EVOLUTION → MEMORY PERSIST → RESPONSE
+```
+
+## Five-Brain Integration
+
+### Agent Memory
+
+- 上游能力：`neo4j-labs/agent-memory` 的实体、关系、上下文检索与长期语义记忆思想；锁定提交见 `reference/open_source/upstream-lock.json`。
+- Compass Adapter：`scripts/integrations/neo4j_memory_adapter.py` 的 `Neo4jMemoryAdapter`；拒绝 hidden reasoning 字段并按 `user_id` 隔离实体。
+- 实际入口：`MemoryEngine.load_user_context()` 在每轮意图识别前执行；`persist_turn()` 在响应前写 Profile/Goal/Competency/Growth/Semantic，`persist_growth_graph()` 写成长关系。
+- Fallback：`CompositeMemoryBackend` 始终先写 `SQLiteMemoryBackend`；Neo4j 缺包、缺凭据或连接失败时返回健康状态并继续运行。
+- 测试：`tests/unit/test_memory_v22.py` 覆盖跨实例恢复、目标版本历史、隐藏推理过滤和 Neo4j 可选降级；五脑合同测试用 Fake Neo4j 验证实体写入。
+
+### Agent Browser
+
+- 上游能力：`vercel-labs/agent-browser` 公共网页打开、快照和文本读取。
+- Compass Adapter：`AgentBrowserAdapter` 仅允许公开 HTTPS read/get text；`AgentBrowserProvider` 转换为带 URL/采集时间的 `JobRecord`。
+- 实际入口：`RecruitmentEngine → ProviderRouter → AgentBrowserProvider → AgentBrowserAdapter.read_public_page()`。
+- Fallback：Reader/CLI 不可用或页面失败时报告 Provider 状态，继续 User JD 或 Versioned Snapshot；不投递、不上传、不填表、不绕过验证码。
+- 测试：`tests/unit/test_recruitment_v22.py` 验证实际输入输出并拒绝 fill/upload/submit；`five_brain_demo.py` 用五个明确标记为 synthetic 的公共页面夹具验证 Provider 链，不把它们计作真实市场。
+
+### Self Improving Agent
+
+- 上游能力：`LEARNINGS/ERRORS/FEATURE_REQUESTS`、Pattern Key、Recurrence Count、Promotion。
+- Compass Adapter：`SelfImprovingAdapter` 和 `ImprovementEngine.observe_event()`；只保留去标识化摘要、reason code 和允许的运行上下文。
+- 实际入口：用户反馈、浏览器/解析错误和主动建议反馈进入 Pattern Store；同 Pattern 在 30 天窗口跨任务重复后提升。
+- Fallback：单次观察只记录 pending，不自动应用策略；不保存身份证、密钥、完整对话或私有推理。
+- 测试：既有跨任务复现测试继续通过；`test_five_brain_v22.py` 验证 recurrence=3、promoted=true。
+
+### Capability Evolver
+
+- 上游能力：Gene、Capsule、Evolution Event、候选选择和受控实验思想。
+- Compass Adapter：`from_promoted_pattern()`、`start_trial()`、`finish_trial()`；保存 source pattern、baseline、metric、result、accepted_at/rollback_reason。
+- 实际入口：Self Improving 提升后的 Pattern 产生 Candidate；完成率等可观察指标决定 Accept/Rollback。
+- Fallback：证据为空不建 Candidate；`auto_apply=false`、`allow_self_modify=false`，写入限制在 runtime strategy store。
+- 测试：无证据拒绝、trial 接受/回滚、保护路径拒写和五脑 E2E 均通过。
+
+### Proactive Agent
+
+- 上游能力：基于上下文信号的主动时机判断。
+- Compass Adapter：`ProactiveEngine.check()` 支持 missed tasks、完成率、实际时长、考试/求职窗口、目标变化、市场过期、Gap 停滞和 Evidence drought。
+- 实际入口：`CompassEngine` 在当前交互末尾收集 Memory/Market/Progress 信号，返回 should_prompt/reason/priority/confidence/cooldown。
+- Fallback：无信号返回 no_trigger；冷却期不重复；连续 reject 抑制同类提示；`delivery=current_interaction_only`、`background_push=false`。
+- 测试：触发、冷却、accepted/rejected/ignored 和拒绝抑制合同均有覆盖。
+
+## Recruitment Pipeline
+
+```text
+Target: scripts/career/job_target_resolver.py + job_normalizer.py
+→ Query: scripts/recruitment/query_expander.py
+→ Browser/Provider: provider_router.py + public_search/agent_browser/user_jd/snapshot_provider.py
+→ JD Normalize/Relevance/Deduplicate: recruitment_engine.py + models.py
+→ Skill/Requirement: skill_extractor.py
+→ Market: recruitment_engine.py + market_cache.py
+```
+
+任何城市和岗位都允许进入动态研究。User JD 和公共页面保留 source；synthetic 始终标记且不能形成真实市场状态。动态未知技能写入 runtime registry，不修改固定源码词典。
+
+## Learning Pipeline
+
+`Market → Gap → Plan → Tutor → Assessment → Evidence → Competency → Replan`
+
+- `gap_engine.py` 只用岗位要求减已验证能力；claimed 无 Evidence 时按 0 处理。
+- `adaptive_planner.py` 对真实充足市场生成 Formal Plan，否则生成声明清楚的 Preliminary Plan；周任务最多三项并保留 Task → Gap → JD 证据链。
+- `tutor_engine.py` 进入微课和练习，不生成第二份计划；`assessment_engine.py` 使用显式验收项。
+- `evidence_engine.py` 只把 passed Assessment 变成 verified Evidence；Competency 更新后重算 Gap 并 Replan。
+
+## Memory Pipeline
+
+`SQLite Structured Store (canonical) + Neo4j Agent Memory (optional graph/semantic) + SQLite Semantic Retrieval fallback`
+
+READ BEFORE TURN 恢复 Profile/Goal/Competency/Growth/Semantic/Graph；WRITE AFTER TURN 分别写结构化更新、重要语义候选和领域关系。`state_history` 对目标、时间和偏好字段保留旧值。知识图谱覆盖 User→Goal、Goal→City/Job、Market→Skill、User→Competency→Evidence、Gap→Skill、Plan/Task→Gap/Skill。
+
+## Improvement and Proactive Pipelines
+
+```text
+Error/Correction → Sanitized Pattern → Promotion → Candidate → Trial → Accept/Rollback
+Memory + Market + Progress → Decision → Suggestion → Feedback → Policy Learning
+```
+
+系统改进知识与用户 Memory 分库存储；Pattern 使用用户哈希且只保留受控上下文字段。演化不修改源码、安全策略、许可证或 vendor。主动检查只发生在当前交互。
+
+## File Changes
+
+Added：
+
+- `config/`：recruitment、memory v2.2、improvement、evolution、proactive、planning、learning policy。
+- `scripts/memory/backends/` 与 `knowledge_graph.py`。
+- `scripts/career/job_target_resolver.py`、`job_normalizer.py`。
+- `scripts/recruitment/` Provider、模型、查询扩展、技能提取、Cache、统一 Engine。
+- `scripts/competency/` Profile、Evidence、Gap、Dependency Graph。
+- `scripts/learning/` Planner、Tutor、Lesson、Exercise、Assessment、Progress。
+- `scripts/growth_orchestrator.py`、三个 2.2 Demo、四个新测试文件。
+
+Modified：
+
+- `scripts/compass_engine.py` 接入 READ BEFORE TURN、动态招聘/学习闭环、Tutor/Assessment 和 WRITE AFTER TURN。
+- 五个 Integration/Engine、Intent/Action/Facts、Archive/Models、Validator/Packer、版本元数据、README/SKILL 和 upstream skill-mode 跳过规则。
+
+Removed：无。既有 Review、职业探索、考试、计划、Memory API、测试和 vendor 均保留。
+
+## Tests and Packaging
+
+修改前真实基线：compile 通过；`81 passed`；2.1 validator 不认识 `--mode skill`（退出码 2），该缺口已修复。
+
+2.2 源目录验证（2026-08-07）：
+
+- compile：通过。
+- pytest：`90 passed`。
+- skill validation：`valid=true`，102 个必需文件、29 个 JSON、1 个快照。
+- full validation：`valid=true`，同时核对 vendor marker/commit。
+- onboarding、full growth、market driven、persistent memory、five brain 五个规定 Demo：全部通过。
+- skill/full pack：成功。
+- skill ZIP 解压复验：compile=0；`82 passed, 2 skipped`（skill 按设计无 vendor，两个 upstream 模块级跳过）；skill validation=true。
+- skill/full ZIP 内容验证：均 valid=true。
+
+唯一验证警告是既有资源 `pending-spring-guide` 仍标记待人工复核；未将它误报为已验证资源。
+
+## Final Package
+
+- `dist/compass-student-growth-2.2.0-skill.zip`：已真实生成并通过解压自验证。
+- `dist/compass-student-growth-2.2.0-full.zip`：已真实生成，包含 vendor 和完整 attribution，并通过 full/ZIP validation。
+
+## Remaining Limitations
+
+- 公开招聘覆盖取决于可公开访问来源；网站条款、robots、登录、验证码、反自动化和页面变化会限制采集。
+- Public Search Provider 需要宿主注入搜索能力；Agent Browser 需要 CLI/Reader 和网络；失败时使用 User JD 或 Snapshot。
+- Neo4j 需要单独部署和凭据；未部署时无远端图检索，但 SQLite 状态、关系和语义 fallback 正常。
+- LLM 标准化、Query Expansion 和结构化抽取均为 optional；离线时采用确定性规则与动态 Registry。
+- 市场快照随时间失效；Cache 标记 expires_at/stale，不能把旧快照表述为实时市场。
+- Proactive 默认没有 scheduler、notification 或后台 push，只在当前交互检查。
+- Demo 中硬编码用户 JD 和注入式网页内容全部标记 `synthetic=true`；它们只证明处理闭环，market status 为 insufficient，不代表公共市场覆盖。
+
+---
+
+# Compass 2.1 Interaction Optimization Report (historical baseline)
 
 ## 1 Baseline
 

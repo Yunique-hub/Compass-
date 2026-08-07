@@ -1,33 +1,36 @@
-# Compass 大学生智慧成长罗盘 v2.1.0
+# Compass 大学生智慧成长罗盘 v2.2.0
 
-Compass 是一个离线优先、可上传到智能体平台的行动型大学生成长导师 Skill。它先认识用户、判断当前成长阶段，并在信息足够时立即把困惑转成目标和可验收任务；职业探索、招聘/JD 分析、课程学习、考试复习、长期记忆、策略改进、公开只读研究和当前交互主动关怀统一在一个 Growth Engine 中。
+Compass 是一个以目标就业城市公开招聘需求为依据，为大学生动态规划学习路径、直接陪伴学习，并通过知识图谱永久保存成长状态的就业导向成长智能体。架构支持任意自由文本城市和岗位；实际市场覆盖度取决于可公开访问的数据，拿不到真实样本时会明确返回 `market_data_status=insufficient`，不会用内置知识或合成夹具冒充市场结论。
 
-默认配置不需要网络和 Neo4j：职业知识、招聘演示快照、课程资料处理、SQLite 记忆、复盘和档案都可以在本地运行。Neo4j agent-memory 与 agent-browser 是可选增强，失败时不会阻断核心流程。
+默认配置不需要网络、外部 LLM 或 Neo4j：SQLite 保存关键用户画像、目标、Competency、Evidence 和成长状态，用户提供的 JD 与版本化快照可在离线模式运行。Neo4j Agent Memory 提供可选知识图谱/语义增强，Agent Browser 提供公共网页只读执行；任一可选能力不可用都不会阻断核心流程。
 
 ## 核心架构
 
 统一入口是 `scripts/compass_engine.py`，每轮按固定顺序执行：
 
 ```text
-SAFETY → MEMORY LOAD → INTENT → STATE → CONTEXT → BUSINESS
-       → REVIEW → RESEARCH → IMPROVEMENT → EVOLUTION
-       → PROACTIVE → MEMORY WRITE → ARCHIVE → RESPONSE
+SAFETY → PERSISTENT MEMORY RESTORE → SEMANTIC/GRAPH RETRIEVAL
+       → INTENT → FACT/STAGE/SUFFICIENCY → ACTION → CAREER TARGET
+       → RECRUITMENT → MARKET → GAP → PLAN/TUTOR/ASSESSMENT
+       → EVIDENCE → COMPETENCY → REPLAN → PROACTIVE
+       → SELF IMPROVEMENT → EVOLUTION → MEMORY PERSIST → RESPONSE
 ```
 
-六个适配模块：
+五个基础脑区（Review 继续作为成熟业务模块保留，但不计入五脑）：
 
-- Review Brain：材料转换、来源优先级、知识点、题目/答案分离、错题。
-- Memory Brain：SQLite/JSON、用户隔离、召回、去重、遗忘、可选 Neo4j。
-- Improvement Brain：按可观察反馈识别跨任务重复模式。
-- Evolution Brain：运行时策略候选、试验、指标和回滚，禁止修改源码。
-- Research Brain：明确授权的 HTTPS 公共网页只读访问与离线快照降级。
-- Proactive Brain：当前交互内提醒、24 小时冷却和 accepted/rejected/ignored 反馈。
+- Agent Memory：SQLite 结构化永久状态 + 可选 Neo4j 成长知识图谱和语义召回。
+- Agent Browser：公共招聘页面只读打开/读取/文本证据；拒绝 fill、upload、submit。
+- Self Improving Agent：去标识化记录错误、纠正、最佳实践和重复 Pattern。
+- Capability Evolver：由已提升 Pattern 产生可审计策略候选、Trial、Accept/Rollback；禁止修改源码。
+- Proactive Agent：综合 Memory、Market、Progress 信号，在当前交互内给出带 cooldown 和反馈的建议。
+
+核心业务闭环是 `Target → Query → Provider/Browser → JD → Skill → Market → Gap → Plan → Tutor → Assessment → Evidence → Competency → Replan`。用户自述技能只写入 `claimed_level`；只有通过 Assessment 或其他可验证 Evidence 才能提高 `verified_level`。
 
 职业方向主路径从 `StudentFeatureProfile` 自动评分，不接受外部手写维度分数。原 v1 脚本保留为兼容包装和独立工具。
 
-## Interaction Design v2.1
+## Interaction Design v2.2
 
-2.1 将交互从“一次性问卷”改为渐进式、行动优先的导师流程：
+2.2 保留 2.1 的渐进式、行动优先交互，并把永久记忆、招聘市场和陪学闭环接到每轮统一运行链：
 
 - Preferred name onboarding：新用户第一轮只询问希望使用的称呼；高风险安全信号例外。
 - Minimum information principle：判断是否足够“现在开始”，不等待完整画像。
@@ -105,6 +108,9 @@ docker compose --profile neo4j up -d
 .\.venv\Scripts\python.exe -B scripts\demo\onboarding_demo.py
 .\.venv\Scripts\python.exe -B scripts\demo\it_support_student_demo.py
 .\.venv\Scripts\python.exe -B scripts\demo\six_brain_demo.py
+.\.venv\Scripts\python.exe -B scripts\demo\market_driven_learning_demo.py
+.\.venv\Scripts\python.exe -B scripts\demo\persistent_memory_demo.py
+.\.venv\Scripts\python.exe -B scripts\demo\five_brain_demo.py
 .\.venv\Scripts\python.exe -B scripts\demo\full_growth_demo.py
 .\.venv\Scripts\python.exe -B scripts\demo_v2.py --output runtime\demo-output-v2
 .\.venv\Scripts\python.exe -B scripts\validate_package.py
@@ -140,8 +146,17 @@ docker compose --profile neo4j up -d
 
 输出：
 
-- `dist/compass-student-growth-2.1.0-skill.zip`
-- `dist/compass-student-growth-2.1.0-full.zip`
+- `dist/compass-student-growth-2.2.0-skill.zip`
+- `dist/compass-student-growth-2.2.0-full.zip`
+
+## 已知限制
+
+- 公共招聘来源覆盖受网站公开可访问性、robots/条款、登录、验证码和页面结构影响；系统不绕过访问控制。
+- Public Search 与 Agent Browser Provider 是可选能力；不可用时只能使用用户 JD 或版本化快照。
+- Neo4j 需要单独部署与凭据；SQLite 始终是核心状态的 canonical store。
+- LLM 扩展/抽取是可选增强；没有 LLM 时使用 Alias、Pattern 和动态技能注册表。
+- 市场结论只适用于记录的来源与采集时间；过期快照会标为 stale。
+- Proactive 默认仅在当前交互检查，不假装存在后台监控、通知或推送。
 
 ZIP 根目录直接包含 `SKILL.md` 和 `manifest.yaml`，没有额外套层；`.git`、虚拟环境、依赖缓存、运行时数据库和 Python 缓存不会进入发布包。
 

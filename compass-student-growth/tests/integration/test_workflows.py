@@ -44,7 +44,8 @@ def test_confirmed_goal_snapshot_gap_and_formal_plan() -> None:
     recruitment = process_snapshot(snapshot())
     gaps = build_gaps(recruitment["data"]["skill_statistics"], {})
     plan = generate_plan(confirmed(), gaps["data"]["gaps"], weekly_hours=10, snapshot_version=recruitment["data"]["snapshot"]["snapshot_version"], synthetic=True)
-    assert plan["ok"] and plan["data"]["formal_plan_generated"] is True
+    assert plan["ok"] and plan["data"]["formal_plan_generated"] is False
+    assert plan["data"]["plan"]["mode"] == "preliminary"
 
 
 def test_multiple_jds_build_real_input_skill_graph() -> None:
@@ -106,4 +107,4 @@ def test_fixed_demo_closes_all_steps_and_marks_synthetic() -> None:
     output = run_demo()
     assert output["ok"] and output["data"]["completed_steps"] == 16
     assert "仅用于功能测试" in output["data"]["synthetic_data_notice"]
-    assert output["data"]["formal_plan"]["formal_plan_generated"] is True
+    assert output["data"]["formal_plan"]["formal_plan_generated"] is False

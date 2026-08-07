@@ -1,0 +1,5 @@
+{
+  "weekly_max_tasks": 3,
+  "cold_start_capacity": 0.6,
+  "capacity_ratio": 0.85
+}

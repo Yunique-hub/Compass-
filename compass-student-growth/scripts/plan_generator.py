@@ -60,20 +60,20 @@ def generate_plan(
             output=f"一份可运行或可检查的 {skill} 练习产出和复盘说明", acceptance_criteria=["产出可运行或可打开", "覆盖至少 3 个关键场景", "记录问题、修复与验证结果"], dependencies=["确认任务范围", "准备本地开发或记录环境"], resources=related[:4], fallback="若完整练习受阻，提交最小复现、问题记录和下一步验证清单。",
         ))
     plan = LearningPlan(
-        basis={"primary_direction": confirmation.get("primary_direction"), "city": confirmation.get("target_city"), "job_search_period": confirmation.get("job_search_period") or confirmation.get("graduation_date"), "evidence": "实际招聘快照或用户真实 JD + 用户可验证能力证据", "data_notice": "仅用于功能测试，不代表当前市场" if synthetic else "结论只适用于所列数据范围"},
+        basis={"primary_direction": confirmation.get("primary_direction"), "city": confirmation.get("target_city"), "job_search_period": confirmation.get("job_search_period") or confirmation.get("graduation_date"), "evidence": "实际招聘快照或用户真实 JD + 用户可验证能力证据", "data_notice": "仅用于功能测试，不代表真实招聘市场" if synthetic else "结论只适用于所列数据范围"},
         snapshot_version=snapshot_version,
         quarter_or_semester_milestones=[{"period": "本季度/学期", "milestone": "形成目标岗位核心基础与一个可演示项目证据"}],
         monthly_milestones=[{"period": "本月", "milestone": f"完成 {', '.join(competencies[:3]) or '核心基础'} 的最小闭环并保留证据"}],
         weekly_core_tasks=tasks, optional_tasks=[], total_weekly_hours=sum(item.estimated_hours for item in tasks), capacity_limit=capacity,
         risks=["招聘快照为低样本时只能作为流程演示或弱证据", "任务难度需根据本周复盘调整"], adjustment_notes=["超预算时删除低优先级核心任务，不把所有任务压缩为不现实的时长。"],
     ).to_dict()
-    plan["mode"] = "formal"
+    plan["mode"] = "preliminary" if synthetic else "formal"
     validated = validate_plan(plan, confirmation, synthetic=synthetic, auto_fix=True)
     validated_plan = validated["data"]["plan"]
     warnings = list(validated.get("warnings", []))
     if synthetic:
-        warnings.append(error("SYNTHETIC_DATA", "仅用于功能测试，不代表当前市场"))
-    return result(MODULE, {"plan": validated_plan, "validation": {key: validated["data"][key] for key in ("valid", "auto_fix", "remaining_issues")}, "formal_plan_generated": validated["data"]["valid"]}, ok=validated["data"]["valid"], warnings=warnings, errors=validated.get("errors", []))
+        warnings.append(error("SYNTHETIC_DATA", "仅用于功能测试，不代表真实招聘市场"))
+    return result(MODULE, {"plan": validated_plan, "validation": {key: validated["data"][key] for key in ("valid", "auto_fix", "remaining_issues")}, "formal_plan_generated": validated["data"]["valid"] and not synthetic}, ok=validated["data"]["valid"], warnings=warnings, errors=validated.get("errors", []))
 
 
 def _handler(raw: Mapping[str, Any]) -> dict[str, Any]:
