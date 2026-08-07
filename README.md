@@ -179,6 +179,6 @@ ZIP 根目录直接包含 `SKILL.md` 和 `manifest.yaml`，没有额外套层；
 
 更完整的环境、测试、上游缺陷和工程决策见 `ENVIRONMENT_BASELINE.md` 与 `DEVELOPMENT_REPORT.md`。
 
-## 许可证
+## 执照
 
-本项目自主开发的代码采用 [MIT 许可证](LICENSE)。`vendor/` 中的第三方源码仍适用各自许可证，详见 `THIRD_PARTY_NOTICES.md` 与 `licenses/`。
+本项目采用 [MIT 执照](LICENSE)。
