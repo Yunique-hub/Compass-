@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "retrieved_at": "2026-08-07T14:17:36+08:00",
+  "projects": {
+    "final-review": {
+      "repository": "https://github.com/lucianwhy/final-review.git",
+      "branch": "master",
+      "commit": "622df4d7334508ed844b5312b8f0ad648b725ccd",
+      "license_files": [],
+      "license_status": "separate-user-authorization"
+    },
+    "agent-memory": {
+      "repository": "https://github.com/neo4j-labs/agent-memory.git",
+      "branch": "main",
+      "commit": "ac86a8ff01354e6b9c4d1b17089fba89d42dcf2b",
+      "license_files": [
+        "LICENSE",
+        "typescript/LICENSE",
+        "typescript/packages/vercel-ai-provider/LICENSE"
+      ],
+      "license_status": "license-files-present"
+    },
+    "self-improving-agent": {
+      "repository": "https://github.com/pskoett/self-improving-agent.git",
+      "branch": "master",
+      "commit": "b889ef0724c27b7181111b8dd1ac3a108d0b5160",
+      "license_files": [],
+      "license_status": "separate-user-authorization"
+    },
+    "agent-browser": {
+      "repository": "https://github.com/vercel-labs/agent-browser.git",
+      "branch": "main",
+      "commit": "acbc22bdc5d4f6c5a88d97d4a4745d3c5eb0591f",
+      "license_files": [
+        "LICENSE"
+      ],
+      "license_status": "license-files-present"
+    },
+    "capability-evolver": {
+      "repository": "https://github.com/NMTZ-z/capability-evolver.git",
+      "branch": "main",
+      "commit": "56bad38c48ed31f97c49aef99fa34edb7b92b03c",
+      "license_files": [
+        "LICENSE"
+      ],
+      "license_status": "license-files-present"
+    },
+    "proactive-agent": {
+      "repository": "https://github.com/thunlp/ProactiveAgent.git",
+      "branch": "main",
+      "commit": "3fcf9beebe256b86871659fbb12541c41c9381b9",
+      "license_files": [
+        "LICENSE"
+      ],
+      "license_status": "license-files-present"
+    }
+  }
+}

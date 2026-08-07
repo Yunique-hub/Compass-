@@ -1,107 +1,146 @@
-# Compass 大学生智慧成长罗盘
+# Compass 大学生智慧成长罗盘 v2.0.0
 
-`compass-student-growth` v1.0.0 是一个中文、离线优先、可上传到 AI 龙虾/ezAgent 类平台的教育 Skill。它先帮助大学生比较就业方向，把最终决定交给用户；只有主方向、就业目的地和求职时间均确认后，才用可追溯招聘快照或用户真实 JD 生成胜任力差距和学习计划。
+Compass 是一个离线优先、可上传到智能体平台的大学生成长 Skill。它把职业探索、招聘/JD 分析、课程学习、考试复习、长期记忆、策略改进、公开只读研究和当前交互主动关怀统一到一个 Growth Engine 中。
 
-## 定位、目标用户与首批范围
+默认配置不需要网络和 Neo4j：职业知识、招聘演示快照、课程资料处理、SQLite 记忆、复盘和档案都可以在本地运行。Neo4j agent-memory 与 agent-browser 是可选增强，失败时不会阻断核心流程。
 
-Compass 是朋友式成长导师，不是一次性职业测评、万能课程推荐器或心理诊断工具。竞赛版采用“窄范围高质量”：优先服务计算机科学、软件工程、数据科学等信息类专业；方向知识库首批覆盖 Java 后端、Python 后端、数据分析、测试开发、产品助理。当前仅附杭州 × Java 后端的合成演示快照；北京、上海、深圳、广州、成都等城市需要团队补充真实、授权、可追溯数据后才可宣称覆盖。
+## 核心架构
 
-## 确认式业务闭环
+统一入口是 `scripts/compass_engine.py`，每轮按固定顺序执行：
 
-用户画像 → 2—4 个方向比较 → 用户确认主/备选方向 → 确认目的地和求职时间 → 读取匹配快照/真实 JD → 岗位需求与差距 → 学期/季度、月、周三级计划 → 执行复盘 → 更新成长档案与条件启用的应用层长期记忆。
+```text
+SAFETY → MEMORY LOAD → INTENT → STATE → CONTEXT → BUSINESS
+       → REVIEW → RESEARCH → IMPROVEMENT → EVOLUTION
+       → PROACTIVE → MEMORY WRITE → ARCHIVE → RESPONSE
+```
 
-三道硬门：
+六个适配模块：
 
-1. 方向未确认：只能比较方向并给 1—2 周探索任务。
-2. 方向已确认、目的地缺失：只给通用基础，明确“不是基于目的地招聘市场的数据规划”。
-3. 主方向、目的地和求职时间全确认：才能用匹配快照或真实 JD 生成正式计划。
+- Review Brain：材料转换、来源优先级、知识点、题目/答案分离、错题。
+- Memory Brain：SQLite/JSON、用户隔离、召回、去重、遗忘、可选 Neo4j。
+- Improvement Brain：按可观察反馈识别跨任务重复模式。
+- Evolution Brain：运行时策略候选、试验、指标和回滚，禁止修改源码。
+- Research Brain：明确授权的 HTTPS 公共网页只读访问与离线快照降级。
+- Proactive Brain：当前交互内提醒、24 小时冷却和 accepted/rejected/ignored 反馈。
 
-方向或目的地改变后，旧招聘快照、能力差距与正式计划失效，必须重新确认和计算。
+职业方向主路径从 `StudentFeatureProfile` 自动评分，不接受外部手写维度分数。原 v1 脚本保留为兼容包装和独立工具。
 
-## 两种模式
+## 环境要求
 
-| 模式 | 状态 | 能力与边界 |
-|---|---|---|
-| 竞赛保底档案模式 | 已实现，默认 | 无网络；版本化 reference 快照；真实 JD；每轮完整 JSON/Markdown 成长档案；独立演示闭环。 |
-| 自动长期记忆模式 | 条件启用/工程增强 | 文件与 SQLite 结构化后端已实现；可选向量适配器协议、分流、召回、冲突、遗忘已实现；真实 Embedding/Reranker/向量库需部署方接入并测试。 |
+- Python 3.10 或更高；本项目已在 Python 3.11.4 验证。
+- Node.js 24 或更高、pnpm 11 或更高，仅在使用 agent-browser 或运行对应上游烟测时需要。
+- Docker 仅用于可选 Neo4j 服务，不是核心运行条件。
 
-大模型本身不拥有这里描述的永久记忆。自动记忆是 Agent 应用层能力，不是未知平台的原生已实现能力。
-
-## 安装与运行
-
-核心运行仅需 Python 3.10+ 标准库。测试开发需要环境已有 `pytest`；项目不在运行时自动安装依赖。
+建议使用项目内虚拟环境：
 
 ```powershell
-cd compass-student-growth
-python scripts/demo_pipeline.py
-python scripts/validate_package.py
+python scripts/bootstrap_dev.py --install
+.\dev.ps1
 ```
 
-统一业务 CLI 从 `--input input.json` 或 stdin 接收 JSON，stdout 只输出最终 JSON，错误诊断写 stderr。例如：
+Linux/macOS：
+
+```sh
+python scripts/bootstrap_dev.py --install
+./dev.sh
+```
+
+如果只想执行现有环境验证：
 
 ```powershell
-'{"text":"本科，熟悉 Java 和 Spring Boot，参与过 Web 项目并负责接口开发。"}' | python scripts/jd_analyzer.py
+.\.venv\Scripts\python.exe scripts\bootstrap_dev.py
 ```
 
-## 测试、演示与打包
+可选 Neo4j：复制 `.env.example`，修改密码后执行：
 
 ```powershell
-python -m compileall scripts
-python -m pytest -q
-python scripts/validate_package.py
-python scripts/demo_pipeline.py
-python scripts/pack_skill.py --output dist/compass-student-growth-1.0.0.zip
+docker compose --profile neo4j up -d
 ```
 
-若环境禁止在源码目录写 `__pycache__`，可设置任务专用 `PYTHONPYCACHEPREFIX` 指向项目内可写缓存目录后执行等价 `compileall`。固定演示使用小明档案和醒目标记的合成快照，不联网，不把合成数据描述为杭州真实市场。
+## 调用统一引擎
 
-## 招聘快照与真实数据替换
+通过 stdin 传 JSON：
 
-快照位于 `reference/recruitment_snapshots/cities/<city>/<direction>-<version>.json`，清单位于 `snapshot_manifest.json`。至少保留：来源/来源类型、岗位发布日期、采集时间、样本量/有效样本量、采集区间、版本、城市、方向、局限、版权/使用说明。每条岗位至少有稳定的 `job_id` 或 `source_key`。
-
-接入真实公开数据时：
-
-1. 取得合法使用授权并由团队离线整理；不要把爬虫放入 Skill。
-2. 保留原始来源标识，填 `synthetic: false`，不得伪造缺失薪资或数量。
-3. 用 `recruitment_data_processor.py` 校验、归一化、去重和统计。
-4. 人工抽检岗位名、同义词、必备/高频/加分分层。
-5. 更新 `snapshot_manifest.json`，执行测试与包校验。
-
-当前 `java-backend-demo-v0.1.json` 全部记录都使用 `synthetic: true` 和 `source: synthetic-test-fixture`，只验证流程。样本少于 20，因此为低置信度；项目的 20/30 条规则不是行业统一标准。
-
-## JD、档案和资源
-
-用户可向 `jd_analyzer.py` 提交单份 `text` 或多份 `jds`；多份统计只以实际输入为分母并保留 JD ID。档案导出支持 JSON/Markdown：调用 `archive_export.py` 时传 `archive`、`format` 和可选 `output`；导入时向 `archive_import.py` 传 `path` 或 `content`。Markdown 档案包含机器可读 JSON 区块，确保显式字段、确认状态、快照版本和计划状态可往返。冲突字段进入待确认，不静默覆盖；未知字段保存在 `extensions`。
-
-学习资源位于 `reference/resources/cs_resources.json`。每个资源含阶段、时长、练习、类型、活跃度、最后检查、理由和替代。`verified: false` 的候选资源只产生警告，不进入正式演示推荐。
-
-## 文件与 SQLite 记忆后端
-
-```python
-from scripts.memory_store import FileMemoryStore, SQLiteMemoryStore
-
-file_store = FileMemoryStore("runtime/memory.json")
-sqlite_store = SQLiteMemoryStore("runtime/memory.sqlite3")
+```powershell
+'{"user_id":"student-1","message":"计算机大二，学过 Python，不知道毕业适合什么工作"}' |
+  .\.venv\Scripts\python.exe scripts\compass_engine.py
 ```
 
-所有 `upsert/get/list/delete_user` 必须显式传 `user_id`。SQLite 使用事务、复合主键和用户/状态索引；文件后端用临时文件原子替换。两者都记录新增、更新、失效和删除审计，删除审计不包含原始内容。
+生成考试复习时，附件项提供本地路径：
 
-## 扩展向量存储适配器
+```json
+{
+  "user_id": "student-1",
+  "message": "根据真题帮我复习并出题",
+  "course": "操作系统",
+  "exam_days": 4,
+  "attachments": [
+    {"name": "操作系统历年真题.pdf", "path": "E:/materials/操作系统历年真题.pdf"}
+  ]
+}
+```
 
-在部署层实现 `memory_store.VectorStoreAdapter` 的 `upsert(user_id, record)`、`search(user_id, query, top_k)` 和 `delete_user(user_id)`。每个查询必须强制 user_id/租户过滤。可接入 Chroma、Milvus、Qdrant、FAISS 或平台服务，但本包不安装、不导入、不伪造任何一个具体 SDK。Embedding 与 Reranker 也由部署适配器提供。失败时 `memory_retriever.py` 降级为结构化字段 + 本地关键词；关键词检索不等价于正式语义模型。
+输出包含 `intent`、`state`、四段式 `response`、不含内部推理的执行 `trace`、安全结果、记忆变化和 Growth Archive v2。
 
-## 已实现、条件启用、未实现
+## 测试和演示
 
-已实现：F1–F9、F11–F12；即建档、方向分析、确认门、离线招聘快照、JD 规则基线、差距、三级计划、资源、档案、复盘规则和安全路由；文件/SQLite 存储、记忆分类/政策/冲突/遗忘与本地检索也有可测试实现。
+```powershell
+.\.venv\Scripts\python.exe -B -m compileall -q scripts
+.\.venv\Scripts\python.exe -B -m pytest tests -q -p no:cacheprovider
+.\.venv\Scripts\python.exe -B scripts\demo_v2.py --output runtime\demo-output-v2
+.\.venv\Scripts\python.exe -B scripts\validate_package.py
+```
 
-条件启用：F10 的真实自动长期记忆服务、向量检索和重排序。代码接口与降级已实现；只有部署方提供持久化、Embedding、Reranker 和向量服务并通过隔离/删除测试后，才可标为启用。
+9 个演示场景的说明见 `demos/README.md`。运行结果写入忽略的 `runtime/demo-output-v2/`。
 
-未实现：未经授权实时爬虫；具体 AI 龙虾 SDK/API；平台原生永久记忆；自动消息推送；简历/截图视觉解析；ASR/TTS；日历、校园系统联动；全专业、全城市、全岗位覆盖；真实招聘数据与实时薪资趋势。
+## 上游源码和合规
 
-## 隐私与安全
+六个上游仓库的固定仓库地址、分支和 commit 位于 `reference/open_source/upstream-lock.json`。完整未带嵌套 `.git` 的源快照保留在 `vendor/`，许可证或单独授权说明保留在 `licenses/`，集成边界见 `THIRD_PARTY_NOTICES.md`。
 
-只保存规划必要数据；用户可查看、纠正、导出、删除和关闭长期记忆。敏感健康、危机、身份、精确位置和金融信息默认不长期保存。忘记请求删除结构化、向量、索引、缓存和临时副本。安全路由高于规划：普通压力先关怀并降载；危机信号立即停止学习任务，建议联系当地经过核验的紧急服务、学校心理中心、辅导员或身边可信任的人。Compass 不诊断、不提供药物建议、不替代专业治疗。
+同步或验证上游快照：
 
-## 上传平台
+```powershell
+.\.venv\Scripts\python.exe scripts\vendor_sync.py --offline
+```
 
-上传 `dist/compass-student-growth-1.0.0.zip`。zip 根目录直接含 `SKILL.md` 与 `manifest.yaml`。平台接口未知，因此上传后必须人工确认：manifest 是否接受；触发语义；附件/JSON 输入；Python 脚本调用、工作目录、stdout/stderr；reference 访问；文件写入权限；档案下载/再上传；安全路由；会话隔离；是否有获批的持久化/Embedding/Reranker 接口。未实际验证前不要在演示或文档中写“平台已原生实现”。
+脚本会核对快照指纹；发现本地修改时拒绝覆盖。需要联网重新同步时去掉 `--offline`，仍会检出 lock 文件中的准确 commit。
+
+## 发布包
+
+竞赛/平台 Skill 包不含完整 `vendor/` 源码，但包含运行代码、测试、文档、许可证和第三方通知：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\pack_skill.py --mode skill
+```
+
+完整开发包包含六个固定上游源快照：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\pack_skill.py --mode full
+```
+
+输出：
+
+- `dist/compass-student-growth-2.0.0-skill.zip`
+- `dist/compass-student-growth-2.0.0-full.zip`
+
+ZIP 根目录直接包含 `SKILL.md` 和 `manifest.yaml`，没有额外套层；`.git`、虚拟环境、依赖缓存、运行时数据库和 Python 缓存不会进入发布包。
+
+## 安全与隐私
+
+- 高风险状态优先于学习和职业规划；系统不进行心理诊断。
+- 记忆按 `user_id` 隔离，高敏感标识符默认不存，用户可查询、纠正和彻底遗忘。
+- 日志、记忆和档案不保存 chain-of-thought 或隐藏推理。
+- Research Brain 仅允许公共 HTTPS 只读命令，不登录、不点击、不填表、不上传。
+- Evolution Brain 只能写入 `runtime/`，不得修改源码、Skill、manifest、安全规则或许可证。
+- Proactive Brain 只在当前交互内给建议，不虚构后台推送能力。
+
+## 已知限制
+
+- 当前职业和资源知识库主要面向信息技术相关方向，扩展其他专业需要增加本地参考数据。
+- 仓库内招聘快照为合成演示数据，醒目标注为功能测试用途，不能代表当前市场。
+- 默认召回使用结构化字段和关键词降级，不等价于正式语义向量模型。
+- agent-browser、Neo4j、MarkItDown 对特定格式的增强取决于本机可选依赖；失败时输出警告并降级。
+- 本项目不会自行在后台运行。宿主平台若需要定时提醒，必须另外配置平台调度能力。
+
+更完整的环境、测试、上游缺陷和工程决策见 `ENVIRONMENT_BASELINE.md` 与 `DEVELOPMENT_REPORT.md`。

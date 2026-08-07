@@ -2,8 +2,12 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .test-deps/
+.tooling/
 .venv/
 venv/
+node_modules/
+.agent-browser/
+runtime/
 *.db
 *.sqlite*
 dist/*.zip

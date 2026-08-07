@@ -19,6 +19,14 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_FILES = [
     "SKILL.md", "manifest.yaml", "README.md", "pyproject.toml", ".gitignore",
     "config/memory_policy.json", "config/plan_rules.json", "DEVELOPMENT_REPORT.md",
+    "ENVIRONMENT_BASELINE.md", "THIRD_PARTY_NOTICES.md", ".env.example", "docker-compose.yml",
+    "scripts/compass_engine.py", "scripts/archive_v2.py", "scripts/bootstrap_dev.py", "scripts/demo_v2.py",
+    "scripts/core/intent_router.py", "scripts/core/state_machine.py", "scripts/core/context_builder.py",
+    "scripts/career/profile_engine.py", "scripts/career/direction_engine.py",
+    "scripts/academic/capacity_engine.py", "scripts/review/review_engine.py",
+    "scripts/memory/memory_engine.py", "scripts/improvement/improvement_engine.py",
+    "scripts/evolution/evolution_engine.py", "scripts/research/research_engine.py",
+    "scripts/proactive/proactive_engine.py", "reference/open_source/upstream-lock.json",
     "scripts/models.py", "scripts/io_utils.py", "scripts/profile_parser.py", "scripts/career_direction_analyzer.py",
     "scripts/direction_confirmation.py", "scripts/recruitment_data_processor.py", "scripts/jd_analyzer.py",
     "scripts/competency_gap.py", "scripts/plan_generator.py", "scripts/plan_validator.py", "scripts/resource_matcher.py",
@@ -30,8 +38,10 @@ REQUIRED_FILES = [
 REQUIRED_SKILL_TERMS = [
     "身份和角色定位", "适用场景", "何时不该使用", "核心原则", "对话状态机", "冷启动建档",
     "就业方向分析", "用户确认门", "招聘数据分析", "JD 分析", "岗位胜任力差距", "三级学习规划",
-    "资源推荐", "复盘与动态调整", "长期记忆", "成长档案导入/导出", "状态关怀与安全路由",
+    "资源推荐", "长期记忆", "状态关怀与安全路由",
     "数据来源、引用和时效", "异常处理和降级", "标准输出格式", "输出质检清单", "示例 4",
+    "Review Brain", "Memory Brain", "Improvement Brain", "Evolution Brain", "Research Brain", "Proactive Brain",
+    "统一执行顺序", "Growth Archive v2", "统一周时间预算",
 ]
 
 
@@ -62,6 +72,8 @@ def validate_directory(root: Path = ROOT) -> dict[str, Any]:
         errors.append({"code": "INVALID_VERSION", "message": "manifest version 必须为语义化版本"})
     if manifest.get("scope") != "private":
         errors.append({"code": "INVALID_SCOPE", "message": "scope 必须为 private"})
+    if manifest.get("version") != "2.0.0":
+        errors.append({"code": "VERSION_NOT_V2", "message": manifest.get("version", "")})
     for term in ("就业方向分析", "公开招聘数据", "JD", "学习规划", "成长复盘", "长期记忆"):
         if term not in manifest.get("description", ""):
             errors.append({"code": "DESCRIPTION_TERM_MISSING", "message": term})
@@ -71,6 +83,8 @@ def validate_directory(root: Path = ROOT) -> dict[str, Any]:
     for term in REQUIRED_SKILL_TERMS:
         if term not in skill:
             errors.append({"code": "SKILL_SECTION_MISSING", "message": term})
+    if not 5000 <= len(skill) <= 20000:
+        errors.append({"code": "SKILL_LENGTH_INVALID", "message": f"SKILL.md 字符数应在 5000-20000，实际 {len(skill)}"})
     json_files = list((root / "config").glob("*.json")) + list((root / "reference").rglob("*.json"))
     for path in json_files:
         try:
@@ -98,6 +112,23 @@ def validate_directory(root: Path = ROOT) -> dict[str, Any]:
         errors.append({"code": "UNIT_TESTS_MISSING", "message": "tests/unit"})
     if not list((root / "tests" / "integration").glob("test_*.py")):
         errors.append({"code": "INTEGRATION_TESTS_MISSING", "message": "tests/integration"})
+    lock = json.loads((root / "reference" / "open_source" / "upstream-lock.json").read_text(encoding="utf-8"))
+    if len(lock.get("projects", {})) != 6:
+        errors.append({"code": "UPSTREAM_COUNT_INVALID", "message": "必须锁定 6 个上游项目"})
+    for name, expected in lock.get("projects", {}).items():
+        marker_path = root / "vendor" / name / ".upstream-source.json"
+        if not marker_path.is_file():
+            errors.append({"code": "UPSTREAM_MARKER_MISSING", "message": name})
+            continue
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+        if any(marker.get(key) != expected.get(key) for key in ("repository", "branch", "commit")):
+            errors.append({"code": "UPSTREAM_MARKER_MISMATCH", "message": name})
+        if (root / "vendor" / name / ".git").exists():
+            errors.append({"code": "NESTED_GIT_FORBIDDEN", "message": name})
+    for name in lock.get("projects", {}):
+        license_dir = root / "licenses" / name
+        if not license_dir.is_dir() or not any(path.is_file() for path in license_dir.rglob("*")):
+            errors.append({"code": "LICENSE_OR_AUTHORIZATION_MISSING", "message": name})
     return result(MODULE, {"valid": not errors, "root": str(root), "checked_files": len(REQUIRED_FILES), "json_files": len(json_files), "snapshot_files": len(snapshots)}, ok=not errors, warnings=warnings, errors=errors)
 
 
@@ -109,6 +140,9 @@ def validate_zip(path: Path) -> dict[str, Any]:
             for name in ("SKILL.md", "manifest.yaml"):
                 if name not in names:
                     errors.append({"code": "ZIP_ROOT_INVALID", "message": f"zip 根目录缺少 {name}"})
+            for name in ("THIRD_PARTY_NOTICES.md", "licenses/agent-browser/LICENSE"):
+                if name not in names:
+                    errors.append({"code": "ZIP_NOTICE_MISSING", "message": name})
             forbidden = [name for name in names if any(part in name for part in (".git/", "__pycache__", ".pytest_cache", ".test-deps/", ".venv/")) or name.endswith((".db", ".sqlite", ".pyc"))]
             if forbidden:
                 errors.append({"code": "ZIP_FORBIDDEN_CONTENT", "message": forbidden[:10]})

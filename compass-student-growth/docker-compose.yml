@@ -1,0 +1,14 @@
+services:
+  neo4j:
+    image: neo4j:5-community
+    profiles: ["neo4j"]
+    environment:
+      NEO4J_AUTH: "${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-change-me}"
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - compass-neo4j-data:/data
+
+volumes:
+  compass-neo4j-data:

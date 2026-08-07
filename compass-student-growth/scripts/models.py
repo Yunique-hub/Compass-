@@ -19,6 +19,14 @@ class ConversationState(str, Enum):
     GAP_ANALYSIS = "GAP_ANALYSIS"
     PLAN_READY = "PLAN_READY"
     REVIEW = "REVIEW"
+    COURSE_ANALYSIS = "COURSE_ANALYSIS"
+    EXAM_ANALYSIS = "EXAM_ANALYSIS"
+    REVIEW_PLAN_READY = "REVIEW_PLAN_READY"
+    QUESTION_PRACTICE = "QUESTION_PRACTICE"
+    MISTAKE_REVIEW = "MISTAKE_REVIEW"
+    MEMORY_REVIEW = "MEMORY_REVIEW"
+    STRATEGY_REVIEW = "STRATEGY_REVIEW"
+    PROACTIVE_ALERT = "PROACTIVE_ALERT"
     SAFETY_ROUTED = "SAFETY_ROUTED"
 
 
@@ -361,7 +369,7 @@ class MemoryRecord(MemoryCandidate):
 
 @dataclass
 class GrowthArchive(Serializable):
-    archive_version: str = "1.0.0"
+    archive_version: str = "2.0.0"
     updated_at: str = ""
     explicit_profile: dict[str, Any] = None  # type: ignore[assignment]
     career_directions: list[dict[str, Any]] = None  # type: ignore[assignment]

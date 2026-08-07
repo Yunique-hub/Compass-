@@ -1,0 +1,19 @@
+{
+  "name": "compass-student-growth-dev",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Full-mode development dependencies for Compass Growth Engine",
+  "packageManager": "pnpm@11.16.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "browser:help": "agent-browser --help",
+    "browser:install": "agent-browser install",
+    "browser:doctor": "agent-browser doctor --offline --quick"
+  },
+  "dependencies": {
+    "agent-browser": "0.33.2"
+  }
+}

@@ -1,128 +1,130 @@
-# Compass 开发报告
+# Compass v2.0.0 开发与验收报告
 
-生成日期：2026-08-06（Asia/Shanghai）  
-项目：`compass-student-growth`  
-版本：1.0.0
+## 1. 交付结论
 
-## 1. 环境审计
+Compass 已从 v1.0.0 的职业规划 Skill 升级为 v2.0.0 统一 Growth Engine。v1 的 48 项基线测试在改造前全部通过；v2 最终自有、集成和上游烟测合计 67 项全部通过。9 个演示场景真实执行，结果为 `scenario_count=9`、`all_ok=true`。
 
-- 初始目录仅有空 Git 仓库，没有用户代码或文件需要覆盖。
-- Python：3.11.4，满足 3.10+。
-- 初始 Git：`No commits yet on master`。
-- 开发核心过程不调用网络、招聘网站、模型或未知平台 API。
-- 产品详情来源为 `E:/XIAZAI/Compass大学生智慧成长罗盘_v3.0.docx`：结构化读取到 289 个段落、68 张表，无批注、无修订。内容与开发附件无冲突；本机缺少 LibreOffice/soffice，无法执行 DOCX 页面渲染视觉 QA，因此只作为产品业务详情源，不声明其页面视觉核验通过。
+本次改造没有把六个上游项目简单拼接成一组脚本，而是保留固定源快照，在 `scripts/integrations/` 后建立稳定边界。默认核心功能离线可用；浏览器和 Neo4j 都是可选增强。
 
-## 2. 创建与修改的文件
+## 2. 环境基线
 
-当前交付工程包含 59 个项目文件（不计 `.test-deps`、字节码缓存与最终 zip），其中 Python 27 个、自动化测试文件 4 个、JSON 17 个、Markdown 11 个。初始仓库没有项目文件，因此没有覆盖用户已有实现。
+实际验证环境：
 
-- 根文件：`SKILL.md`、`manifest.yaml`、`README.md`、`pyproject.toml`、`.gitignore`、`DEVELOPMENT_REPORT.md`。
-- UI 元数据：`agents/openai.yaml`；它不改变兼容性优先的最小 `manifest.yaml`。
-- 配置：`config/plan_rules.json`、`config/memory_policy.json`。
-- 核心脚本：模型/I/O、画像、方向分析与确认、招聘快照、JD、差距、计划生成与校验、资源、档案导入导出、记忆分类/政策/存储/召回、冲突、安全、演示、包校验和打包。
-- reference：5 个方向、1 份醒目标记的杭州 Java 后端合成快照、技能别名/岗位权重、资源元数据、4 个 JSON Schema、规划/记忆/危机说明与 4 个输出示例。
-- 测试：3 个单元测试模块、1 个集成测试模块、固定画像 fixture、T01—T19 平台 E2E 手工清单。
+| 项目 | 结果 |
+|---|---|
+| 系统 | Windows 10.0.26200 x64，PowerShell 5.1 |
+| Python | 3.11.4 |
+| Node.js | 24.19.0 |
+| npm | 11.17.0 |
+| pnpm | 11.16.0 |
+| Git | 2.55.0.windows.3 |
+| uv | 项目本地 0.12.2 |
+| Chrome | 系统 Chrome 151；agent-browser 另安装 Chrome for Testing 151.0.7922.77 |
+| Docker / Neo4j | 当前主机未安装或未启动；因此只验证 SQLite 默认路径和 Neo4j 可选导入边界 |
 
-## 3. 核心设计决策
+项目本地 `.venv` 安装了 pytest 9.1.1、pytest-cov 7.1.0、jsonschema 4.26、PyYAML 6.0.3、MarkItDown 0.1.7 及文档格式依赖。详细原始基线见 `ENVIRONMENT_BASELINE.md`。
 
-1. 三项确认门是硬约束：主方向、目的地、求职时间缺一项就不生成正式目的地数据计划。
-2. 竞赛档案模式完全离线；每轮可输出完整 JSON/Markdown 档案。
-3. 自动长期记忆明确为 Agent 应用层“条件启用/工程增强”；文件和 SQLite 后端可运行，外部向量库只提供 Protocol，不导入 Chroma/Milvus 或伪造平台接口。
-4. 所有招聘比例只由实际输入计算并保留岗位/JD ID。合成 fixture 使用 `synthetic: true`、`source: synthetic-test-fixture` 和“仅用于功能测试，不代表当前市场”。
-5. 计划最多 3 个核心任务，总时长不超过每周时间的 85%；每项有时长、产出、验收、依赖、至少 2 个已核验资源和失败备选。
-6. 敏感、低可信、冲突与用户意愿规则优先于记忆评分；忘记覆盖结构化、向量、索引、缓存与临时副本，审计不留原文。
-7. 安全路由在规划之前：普通压力关怀降载，高风险停止计划并转介；不诊断、不提供药物建议。
+## 3. 上游锁定与保留
 
-## 4. 实际运行命令与结果
+| 组件 | 固定分支 | 固定 commit | Compass 集成方式 |
+|---|---|---|---|
+| lucianwhy/final-review | master | `622df4d7334508ed844b5312b8f0ad648b725ccd` | Review 的来源优先级、材料→知识点→题目规则 |
+| neo4j-labs/agent-memory | main | `ac86a8ff01354e6b9c4d1b17089fba89d42dcf2b` | 可选 Neo4j 适配；默认 SQLite/JSON |
+| pskoett/self-improving-agent | master | `b889ef0724c27b7181111b8dd1ac3a108d0b5160` | 可观察反馈、Pattern-Key、复现晋升阈值 |
+| vercel-labs/agent-browser | main | `acbc22bdc5d4f6c5a88d97d4a4745d3c5eb0591f` | 公共 HTTPS 只读研究和离线降级 |
+| NMTZ-z/capability-evolver | main | `56bad38c48ed31f97c49aef99fa34edb7b92b03c` | gene/capsule、受控试验和回滚概念 |
+| thunlp/ProactiveAgent | main | `3fcf9beebe256b86871659fbb12541c41c9381b9` | 当前交互信号→建议→反馈，不启用桌面监控 |
 
-### 4.1 编译
+`scripts/vendor_sync.py` 根据 lock 文件同步精确 commit，将 Git 工作副本放在忽略的 `runtime/cache/upstream/`，把无嵌套 `.git` 的完整快照放入 `vendor/`。每个快照都有 `.upstream-source.json` 和树指纹；脏快照不会被静默覆盖。
 
-原命令 `python -m compileall scripts` 在受管沙箱内因不允许 Python 创建 `__pycache__` 而报 `PermissionError`。获准让同一系统 Python 只为编译命令创建缓存后运行等价命令：
+agent-memory、agent-browser、capability-evolver、ProactiveAgent 的许可证原文已复制到 `licenses/`。final-review 与 self-improving-agent 的上游快照没有许可证文件，因此项目没有擅自给它们指定开源许可证，而是保留单独授权说明。完整通知见 `THIRD_PARTY_NOTICES.md`。
 
-```powershell
-E:\programme\pycharm\python\python.exe -m compileall -q scripts
+## 4. 上游真实烟测
+
+- self-improving-agent：`node --test` 上游 hook 套件，13/13 通过。
+- capability-evolver：`node --test` selector 套件，8/8 通过。
+- agent-browser：0.33.2 CLI 版本/帮助通过；真实打开 `https://example.com`、读取标题、生成快照并关闭浏览器通过。
+- agent-memory：Python 包可导入；异步 MockMemoryClient 的 message、preference、context 路径通过。
+- ProactiveAgent：`agent.datamodel` 可在不启动桌面 ActivityWatcher、训练和模型服务的情况下导入。
+- final-review：上游为规则型 Skill，没有可执行测试；已验证规则源和固定快照存在。
+
+## 5. 统一引擎和业务模块
+
+`scripts/compass_engine.py` 实现固定 14 步顺序：安全、记忆读取、意图、状态、上下文、业务、质检、研究、改进、进化、主动检查、记忆写入、档案、响应。高风险安全结果会在第一步终止普通业务。
+
+职业主路径：
+
+- `profile_engine.py` 从结构化画像和当前消息生成 `StudentFeatureProfile`。
+- `direction_engine.py` 自动计算专业、已验证技能、兴趣、经历和约束分项。
+- 主入口没有 `scores` 参数；外部手写分数不能进入 v2 职业评分。
+- v1 分析脚本仍保留，便于旧调用方迁移，但不由统一引擎调用。
+
+学业主路径：
+
+- `capacity_engine.py` 使用一个周总预算，保留 10%—15% 缓冲；考试五天内启用明确优先级。
+- `ReviewEngine` 支持 MarkItDown、纯文本降级、固定来源优先级、知识点证据、题目/答案分离和错题摘要。
+- 主观题答案包含 must-include、分项计分和常见失分；资料不足时不冒充教师标准答案。
+
+## 6. Memory、Improvement、Evolution、Research、Proactive
+
+Memory：SQLite 与 JSON 后端可用，所有操作带 `user_id`，提供召回、精确结构化优先、关键词降级、重复软失效、用户彻底删除和审计。写入前移除隐藏推理键；身份证/银行卡类高敏感标识符默认不存。Neo4j 只在明确配置后通过适配层使用。
+
+Improvement：一次反馈只影响当前任务。相同模式在 30 天内出现至少三次并跨至少两个任务后，才生成 `auto_apply=false` 的策略候选。
+
+Evolution：策略只写到用户 `runtime/`，必须有证据、指标、基线和试验。结果不优于基线即回滚。代码通过路径检查拒绝写出运行时目录以及受保护路径。
+
+Research：策略只允许 HTTPS 公共域名和 open/get/snapshot/find/close，禁止点击、输入、上传、拖拽、eval、localhost 和私有文件。CLI 错误或超时返回离线快照降级，不阻塞主业务。
+
+Proactive：只在当前交互检查考试窗口、连续失败和压力；同类提醒有 24 小时冷却，反馈限制为 accepted/rejected/ignored，结果明确标记 `background_push=false`。
+
+## 7. Growth Archive v2
+
+`scripts/archive_v2.py` 提供 v2 空档案、v1 迁移、读取和原子保存。档案分为 profile、career、academic、exam、learning_strategy、事件、成就、待确认和 extensions。v1 未识别字段原样进入 extensions，并记录 `migrated_from`。损坏 JSON 报错且不覆盖原文件。
+
+## 8. 测试结果
+
+最终命令：
+
+```text
+.venv\Scripts\python.exe -B -m pytest tests -q -p no:cacheprovider
+67 passed in 2.32s
 ```
 
-实际结果：`COMPILE_OK`，退出码 0。
+覆盖：
 
-### 4.2 测试依赖与 pytest
+- v1 数据模型、方向、招聘、计划、记忆、安全和归档回归测试。
+- v2 意图/状态、自动职业评分、统一容量、Review、Memory、Improvement、Evolution、Research、Proactive 单元测试。
+- 统一 14 步流程、安全短路、档案迁移和跨用户隔离集成测试。
+- 六个上游的快照/许可证完整性和可执行烟测。
 
-系统 Python 和工作区文档 Python 起初均没有 pytest。经授权仅安装到项目内 `.test-deps`，并将该目录加入 Git/zip 排除；测试不使用网络。最终命令：
+9 个演示命令：
 
-```powershell
-$env:PYTHONPATH = "$PWD\.test-deps"
-$env:PYTHONDONTWRITEBYTECODE = "1"
-python -m pytest -q -p no:cacheprovider
+```text
+.venv\Scripts\python.exe -B scripts\demo_v2.py --output runtime\demo-output-v2
+{"version":"2.0.0","scenario_count":9,"all_ok":true,...}
 ```
 
-实际最终结果：
+包目录校验：`valid=true`，检查 52 个必要文件、17 个 JSON、1 个招聘快照。唯一警告是资源 `pending-spring-guide` 尚待团队核验；它不会进入正式资源推荐。
 
-- 测试总数：48
-- 通过：48
-- 失败：0
-- 跳过：0
-- 全量通过运行用时：0.40—0.43 秒；manifest 最终对齐后的最后一次为 0.40 秒
+## 9. 已发现的上游限制
 
-覆盖数据模型/Enum/无效字段、方向评分边界和进入成本、确认门和变更历史、招聘去重/别名/频率/置信度/合成标记、单/多 JD、差距与优先级、计划预算/3 项上限/字段、资源门、档案往返与冲突、记忆评分/分流/敏感/冲突/忘记/用户隔离、文件/SQLite、向量降级、安全和 stdout/stderr，以及 12 个集成闭环。
+这些问题没有直接修改 `vendor/`，由适配层规避：
 
-### 4.3 Skill 与目录校验
+- agent-memory 的 MockLongTermMemory 在处理字符串型 Enum 的 entity type 时存在类型/小写转换冲突；Compass 烟测使用 message、preference 和 context，生产 Neo4j 路径需要服务后另做集成验证。
+- capability-evolver 固定快照中的 `assets/gep/genes.json` 在第 107 行附近不是有效 JSON。Compass 不读取该文件，而使用自己的受控运行时策略结构。
+- final-review 和 self-improving-agent 固定快照没有许可证文件；发布包通过授权说明和第三方通知如实标注。
+- ProactiveAgent 上游依赖桌面活动、模型和训练设施；Compass 不安装或运行该监控链，只适配数据模型和交互内反馈思想。
+- MarkItDown 在缺少 ffmpeg 时会对音视频转换给出警告；Compass 当前目标文档格式不依赖 ffmpeg。
 
-```powershell
-$env:PYTHONUTF8 = "1"
-python C:\Users\Yonly\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
-python scripts/validate_package.py
-```
+## 10. 仍然存在的产品限制
 
-实际结果：官方 Skill 校验 `Skill is valid!`；项目校验 `ok=true, valid=true`，检查 31 个必需文件、16 个运行配置/reference JSON 和 1 个快照。唯一警告为 `pending-spring-guide` 待团队核验；该资源被正式推荐门排除。
+- 当前方向知识库覆盖五个信息技术相关方向，不是全专业职业百科。
+- 招聘快照为合成功能数据，不能声称代表 2026 年实时市场。
+- 默认关键词召回是离线降级，不是语义搜索。
+- 当前主机没有 Docker/Neo4j，故未执行真实 Neo4j 服务端写入、并发和故障恢复测试。
+- agent-browser 公共网页烟测通过，但目标网站的条款、结构和可用性会变化；任何生产研究仍需域名白名单和人工复核。
+- 智能体平台的定时推送能力不在该 Skill 内，不能把交互内 Proactive 检查描述成后台服务。
 
-官方校验首次运行因其在中文 Windows 上用默认 GBK 读取 UTF-8 文件而失败；使用 Python 的 UTF-8 模式后通过，未修改外部脚本。
+## 11. 发布验收标准
 
-## 5. 测试失败与修复记录
-
-第一次实际 pytest：47 通过、1 失败。失败用例错误地期望“低可信记忆直接忽略”，但需求规定可信度检查优先，应进入 `needs_confirmation`。修正测试预期，并增加“可信但总评分低→ignore”断言；业务实现不需修改。之后两次全量运行均为 48/48。
-
-演示复查发现部分任务只有 1 个强匹配资源；虽然满足“任务有资源”，但产品详情要求每次推荐 2—4 个，因此改为强匹配优先并补已核验共享资源。复验后 3 个任务资源数均为 2，测试仍 48/48。
-
-## 6. 固定演示实际结果
-
-命令：`python scripts/demo_pipeline.py`
-
-- `ok=true`，完成 16 个规定步骤。
-- 比较数据分析、Java 后端、测试开发 3 个方向；全部标记为探索候选，未冒充确认目标。
-- 模拟用户确认 Java 后端主方向、数据分析备选、杭州目的地、2028 年春招。
-- 加载原始 7 条合成岗位，按 `source_key` 去重 1 条，得到 6 条有效样本；置信度 `low_confidence`。
-- 技能统计均可追溯到 `syn-hz-java-*`；输出“仅用于功能测试，不代表当前市场；不足以得出杭州本地市场结论”。
-- 生成差距矩阵、本月里程碑和 3 个核心任务；任务资源数为 2/2/2，总时长 8.0 小时，容量 8.5 小时。
-- 导出 1.0.0 成长档案与新增/更新/删除/待确认记忆摘要。
-
-## 7. 包校验
-
-命令：
-
-```powershell
-python scripts/pack_skill.py --output dist/compass-student-growth-1.0.0.zip
-python scripts/validate_package.py --zip dist/compass-student-growth-1.0.0.zip
-```
-
-受管沙箱拒绝普通 Python 在 `dist/` 新建 zip；获准只提升这条明确打包命令后成功。实际打包结果：`ok=true`，目录校验 `valid=true`，zip 校验 `valid=true`。随后重建并独立复验：包含 59 个条目，根目录 `SKILL.md=true`、`manifest.yaml=true`、禁止内容 0；Git、`__pycache__`、pytest 缓存、`.test-deps`、虚拟环境、临时数据库和旧 zip 均被排除。报告不记录会因报告内容变化而变化的压缩字节数。
-
-## 8. 当前限制与团队待补充项
-
-- 没有经过授权的真实招聘数据；现有杭州 Java 后端数据全部是合成测试 fixture，不能代表当前市场。
-- 外部学习资源 `pending-spring-guide` 仍需团队核验 URL、版权、活跃度和最后检查时间；正式演示只使用本地已核验资源。
-- 本地 JD 提取是确定性规则基线；模型语义补充必须由平台侧接入且仍需原文证据。
-- 本地关键词召回不是正式 Embedding/Reranker 的等价替代。
-- 未实现实时爬虫、未知平台 SDK、消息推送、真实向量数据库、视觉简历/截图、ASR/TTS、日历和校园系统联动。
-- 当前真实数据范围不足以覆盖产品文档建议的北京、上海、深圳、杭州、广州、成都及全岗位组合。
-- Word 产品详情因本机缺少 LibreOffice/soffice，未完成页面渲染视觉 QA；已完成结构化内容读取。
-
-## 9. 平台上传后需人工验证
-
-1. zip 能否上传，manifest 的 4 个字段是否被接受，是否从 description 正确触发。
-2. 平台是否以 Skill 根目录执行脚本，是否能访问 `reference/`，Python 版本是否为 3.10+。
-3. JSON/附件/stdin 输入和 stdout/stderr 分离是否被平台正确转发。
-4. 方向未确认、目的地缺失和求职时间缺失三道门在真实对话中是否稳定。
-5. 合成标识、样本数、区间、来源、版本和局限是否完整展示。
-6. 成长档案是否可下载、重新上传并保留显式字段。
-7. 安全路由和 T01—T19 手工 E2E，特别是跨用户隔离与完整删除。
-8. 如平台提供持久化、Embedding/Reranker 或向量接口，先实现适配器并通过隔离/删除/故障降级测试，再将自动记忆标为启用。
+发布前必须全部满足：Python compileall 通过、67 项及后续新增测试全部通过、9 场景 `all_ok=true`、目录 validator 通过、两个 ZIP validator 通过、ZIP 无 `.git`/虚拟环境/缓存/运行时数据库、根目录有 `SKILL.md`/manifest、两包均包含许可证和 `THIRD_PARTY_NOTICES.md`。完整包必须包含六个 vendor 快照；Skill 包必须不包含 vendor 源码。

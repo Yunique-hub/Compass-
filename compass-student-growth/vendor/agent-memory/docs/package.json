@@ -1,0 +1,20 @@
+{
+  "name": "neo4j-agent-memory-docs",
+  "version": "1.0.0",
+  "description": "Documentation for neo4j-agent-memory",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "antora antora-playbook.yml",
+    "build:local": "antora --fetch antora-playbook.yml",
+    "clean": "rm -rf build",
+    "serve": "npm run build && npx http-server build/site -p 8080 -o"
+  },
+  "devDependencies": {
+    "@antora/cli": "^3.1.0",
+    "@antora/site-generator": "^3.1.0",
+    "http-server": "^14.1.1"
+  }
+}

@@ -1,7 +1,19 @@
 name: compass-student-growth
-version: 1.0.0
+version: 2.0.0
 scope: private
 description: >-
-  面向大学生的就业方向分析、用户确认决策、就业目的地公开招聘数据分析、
-  岗位 JD 解析、岗位胜任力差距诊断、自适应学习任务与学习规划、成长复盘与长期记忆 Skill。
-  适用于方向比较、目标确认、招聘需求提取、学习路径生成、成长档案更新和跨会话续接。
+  面向大学生的职业就业方向分析、公开招聘数据与 JD 分析、课程考试复习、
+  统一学习规划、成长复盘和应用层长期记忆 Skill；支持 Review、Memory、
+  Improvement、Evolution、Research、Proactive 六脑协作与 Growth Archive v2。
+entrypoint: scripts/compass_engine.py
+python: ">=3.10"
+runtime:
+  default_memory: sqlite
+  network: explicit-public-readonly
+  background_push: false
+optional_services:
+  - neo4j
+  - agent-browser
+artifacts:
+  skill_zip: dist/compass-student-growth-2.0.0-skill.zip
+  full_zip: dist/compass-student-growth-2.0.0-full.zip
