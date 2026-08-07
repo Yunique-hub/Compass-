@@ -1,0 +1,12 @@
+{
+  "max_questions_per_turn": 3,
+  "recommended_questions_per_turn": 2,
+  "max_consecutive_question_only_turns": 2,
+  "minimum_actionable_profile_score": 0.65,
+  "cold_start_load_ratio": 0.6,
+  "steady_state_load_ratio": 0.85,
+  "max_weekly_core_tasks": 3,
+  "always_explain_current_stage": true,
+  "always_provide_next_action_when_ready": true,
+  "ask_non_blocking_fields_later": true
+}

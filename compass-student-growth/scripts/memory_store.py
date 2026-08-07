@@ -6,6 +6,7 @@ import sqlite3
 import threading
 import uuid
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Protocol, Sequence
@@ -128,10 +129,18 @@ class SQLiteMemoryStore(MemoryStore):
                 );
             """)
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self):
         db = sqlite3.connect(self.path)
         db.row_factory = sqlite3.Row
-        return db
+        try:
+            yield db
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
 
     def upsert(self, user_id: str, raw: Mapping[str, Any], *, source: str = "user", reason: str = "upsert") -> dict[str, Any]:
         if not user_id or raw.get("user_id", user_id) != user_id:

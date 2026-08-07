@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument("--mode", choices=("skill", "full"), default="skill")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    output = args.output or Path(f"dist/compass-student-growth-2.0.0-{args.mode}.zip")
+    output = args.output or Path(f"dist/compass-student-growth-2.1.0-{args.mode}.zip")
     payload = pack(output, mode=args.mode)
     write_json(payload)
     raise SystemExit(0 if payload["ok"] else 2)

@@ -11,6 +11,11 @@ T = TypeVar("T", bound="Serializable")
 
 
 class ConversationState(str, Enum):
+    NEW_USER = "NEW_USER"
+    ASKING_PREFERRED_NAME = "ASKING_PREFERRED_NAME"
+    QUICK_PROFILE = "QUICK_PROFILE"
+    PROFILE_SUFFICIENT = "PROFILE_SUFFICIENT"
+    ACTION_READY = "ACTION_READY"
     PROFILE_INCOMPLETE = "PROFILE_INCOMPLETE"
     DIRECTION_ANALYSIS = "DIRECTION_ANALYSIS"
     AWAITING_DIRECTION_CONFIRMATION = "AWAITING_DIRECTION_CONFIRMATION"
@@ -369,7 +374,7 @@ class MemoryRecord(MemoryCandidate):
 
 @dataclass
 class GrowthArchive(Serializable):
-    archive_version: str = "2.0.0"
+    archive_version: str = "2.1.0"
     updated_at: str = ""
     explicit_profile: dict[str, Any] = None  # type: ignore[assignment]
     career_directions: list[dict[str, Any]] = None  # type: ignore[assignment]

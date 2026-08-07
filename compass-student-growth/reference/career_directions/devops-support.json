@@ -1,0 +1,13 @@
+{
+  "direction_id": "devops-support",
+  "direction_name": "初级运维开发 / DevOps Support",
+  "work_content": "在系统与运维基础上使用 Python、Shell、CI/CD 和容器工具完成自动化支持。",
+  "typical_roles": ["DevOps 支持工程师", "初级运维开发工程师", "平台支持工程师"],
+  "foundation_requirements": ["Linux", "Python/Shell", "Git", "网络基础", "日志与监控", "容器基础"],
+  "interest_traits": ["喜欢写代码", "愿意把重复操作自动化", "关注系统可靠性"],
+  "entry_cost": "比纯支持岗位需要更强的代码、工程化和部署证据，适合作为强化方向逐步探索。",
+  "entry_cost_score": 0.58,
+  "risk_notes": ["不应在缺少项目证据时直接自称 DevOps 工程师", "工具要求需要根据目标公司 JD 校准"],
+  "exploration_task": "用 Python 完成批量主机状态检测工具，加入配置文件、日志、README 和基础测试。",
+  "last_reviewed": "2026-08-07"
+}

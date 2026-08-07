@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 
 
 def empty_archive(user_id: str = "") -> dict[str, Any]:
@@ -15,6 +15,17 @@ def empty_archive(user_id: str = "") -> dict[str, Any]:
         "archive_version": VERSION,
         "user_id": user_id,
         "updated_at": datetime.now(timezone.utc).isoformat(),
+        "preferred_name": "",
+        "preferred_name_usage": True,
+        "onboarding_complete": False,
+        "current_growth_stage": "",
+        "profile_sufficiency": {},
+        "realistic_capacity": {},
+        "question_history": {"asked_fields": [], "question_only_streak": 0},
+        "planning_confidence": "low",
+        "last_action": "",
+        "next_expected_update": [],
+        "known_facts": {},
         "profile": {},
         "career": {"directions": [], "confirmed_goal": {}, "capability_evidence": [], "recruitment_snapshot": {}, "skill_graph": []},
         "academic": {"courses": {}, "capacity": {}, "current_plan": {}},

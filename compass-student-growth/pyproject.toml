@@ -1,7 +1,7 @@
 [project]
 name = "compass-student-growth"
-version = "2.0.0"
-description = "离线优先、六脑协作的大学生成长规划 Skill"
+version = "2.1.0"
+description = "离线优先、行动优先、六脑协作的大学生成长导师 Skill"
 requires-python = ">=3.10"
 dependencies = [
   "jsonschema>=4.20",

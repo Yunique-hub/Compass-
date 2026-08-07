@@ -1,0 +1,13 @@
+{
+  "direction_id": "it-support",
+  "direction_name": "IT 支持 / IT 运维支持",
+  "work_content": "处理终端、系统、网络和常见业务环境问题，记录与复盘故障，并用脚本减少重复操作。",
+  "typical_roles": ["IT 支持工程师", "桌面运维工程师", "IT 运维支持工程师"],
+  "foundation_requirements": ["网络基础", "Windows/Linux 系统管理", "故障排查", "服务意识", "文档记录"],
+  "interest_traits": ["喜欢解决具体问题", "愿意与用户沟通", "对脚本自动化感兴趣"],
+  "entry_cost": "网络与服务器课程可直接迁移，但仍需形成系统管理、排障记录和可展示的自动化证据。",
+  "entry_cost_score": 0.32,
+  "risk_notes": ["岗位边界因企业而异，需要用真实 JD 校准", "不能把课程学习等同于独立排障能力"],
+  "exploration_task": "搭建 Linux 实验环境，完成一份含现象、定位、处理和复盘的故障记录。",
+  "last_reviewed": "2026-08-07"
+}

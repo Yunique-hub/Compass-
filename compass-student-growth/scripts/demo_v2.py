@@ -1,4 +1,4 @@
-"""Run nine deterministic Compass v2 scenarios and write an evidence report."""
+"""Run nine deterministic Compass v2.1 compatibility scenarios."""
 from __future__ import annotations
 
 import argparse
@@ -55,7 +55,7 @@ def run_all(output_dir: Path) -> dict[str, Any]:
     migrated = migrate_archive({"archive_version": "1.0.0", "explicit_profile": {"major": "软件工程"}, "custom": {"keep": True}}, user_id="demo-migrate")
     add("09", "Archive v1 到 v2 与策略边界", {"ok": True, "data": {"archive": migrated, "public_url": validate_public_url("https://example.com", {"example.com"}), "evolution_mode": "runtime-only", "source_rewrite": False}})
 
-    report = {"version": "2.0.0", "scenario_count": len(cases), "all_ok": all(case["result"].get("ok") for case in cases), "cases": cases}
+    report = {"version": "2.1.0", "scenario_count": len(cases), "all_ok": all(case["result"].get("ok") for case in cases), "cases": cases}
     (output_dir / "demo-results.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return report
 

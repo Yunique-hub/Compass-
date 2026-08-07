@@ -1,6 +1,6 @@
-# Compass 大学生智慧成长罗盘 v2.0.0
+# Compass 大学生智慧成长罗盘 v2.1.0
 
-Compass 是一个离线优先、可上传到智能体平台的大学生成长 Skill。它把职业探索、招聘/JD 分析、课程学习、考试复习、长期记忆、策略改进、公开只读研究和当前交互主动关怀统一到一个 Growth Engine 中。
+Compass 是一个离线优先、可上传到智能体平台的行动型大学生成长导师 Skill。它先认识用户、判断当前成长阶段，并在信息足够时立即把困惑转成目标和可验收任务；职业探索、招聘/JD 分析、课程学习、考试复习、长期记忆、策略改进、公开只读研究和当前交互主动关怀统一在一个 Growth Engine 中。
 
 默认配置不需要网络和 Neo4j：职业知识、招聘演示快照、课程资料处理、SQLite 记忆、复盘和档案都可以在本地运行。Neo4j agent-memory 与 agent-browser 是可选增强，失败时不会阻断核心流程。
 
@@ -24,6 +24,21 @@ SAFETY → MEMORY LOAD → INTENT → STATE → CONTEXT → BUSINESS
 - Proactive Brain：当前交互内提醒、24 小时冷却和 accepted/rejected/ignored 反馈。
 
 职业方向主路径从 `StudentFeatureProfile` 自动评分，不接受外部手写维度分数。原 v1 脚本保留为兼容包装和独立工具。
+
+## Interaction Design v2.1
+
+2.1 将交互从“一次性问卷”改为渐进式、行动优先的导师流程：
+
+- Preferred name onboarding：新用户第一轮只询问希望使用的称呼；高风险安全信号例外。
+- Minimum information principle：判断是否足够“现在开始”，不等待完整画像。
+- Action-first policy：先给阶段判断、目标和最多三个本周任务，再补充非阻塞信息。
+- Stage awareness：识别适应、基础、探索、实习准备、求职、考试冲刺等阶段。
+- Question budget：单轮最多三个问题，连续纯信息收集不超过两轮。
+- Duplicate question prevention：按字段记录已知事实和提问历史，阻止语义重复追问。
+- Preliminary planning：方向已确认但城市缺失时仍生成初步计划，城市在行动后自然询问。
+- Returning-user resume：新会话恢复称呼、阶段和上次计划，不重复 onboarding。
+
+例如，用户给出“专科大二、明年实习、学过网络和服务器、想做 IT 支持、每天 6 小时”后，Compass 会直接判断为实习准备期，生成长期目标、四段路线和首周最多三个任务。理论可用时间虽然是 42 小时，冷启动计划默认只使用约 60%，两周后再根据真实完成速度校准。
 
 ## 环境要求
 
@@ -87,6 +102,10 @@ docker compose --profile neo4j up -d
 ```powershell
 .\.venv\Scripts\python.exe -B -m compileall -q scripts
 .\.venv\Scripts\python.exe -B -m pytest tests -q -p no:cacheprovider
+.\.venv\Scripts\python.exe -B scripts\demo\onboarding_demo.py
+.\.venv\Scripts\python.exe -B scripts\demo\it_support_student_demo.py
+.\.venv\Scripts\python.exe -B scripts\demo\six_brain_demo.py
+.\.venv\Scripts\python.exe -B scripts\demo\full_growth_demo.py
 .\.venv\Scripts\python.exe -B scripts\demo_v2.py --output runtime\demo-output-v2
 .\.venv\Scripts\python.exe -B scripts\validate_package.py
 ```
@@ -121,8 +140,8 @@ docker compose --profile neo4j up -d
 
 输出：
 
-- `dist/compass-student-growth-2.0.0-skill.zip`
-- `dist/compass-student-growth-2.0.0-full.zip`
+- `dist/compass-student-growth-2.1.0-skill.zip`
+- `dist/compass-student-growth-2.1.0-full.zip`
 
 ZIP 根目录直接包含 `SKILL.md` 和 `manifest.yaml`，没有额外套层；`.git`、虚拟环境、依赖缓存、运行时数据库和 Python 缓存不会进入发布包。
 

@@ -25,6 +25,9 @@ DIRECTION_HINTS = {
     "data-analysis": {"python", "数据分析", "sql", "统计", "表格", "可视化"},
     "test-development": {"python", "测试", "质量", "自动化", "api", "数据结构"},
     "product-assistant": {"产品", "沟通", "需求", "分析", "文档", "用户"},
+    "it-support": {"it支持", "技术支持", "网络", "服务器", "windows", "linux", "故障排查", "python", "自动化"},
+    "network-operations": {"网络运维", "路由交换", "网络安全", "服务器", "linux", "故障排查", "监控"},
+    "devops-support": {"devops", "linux", "python", "自动化", "git", "容器", "脚本", "监控"},
 }
 
 
@@ -89,4 +92,3 @@ def analyze(profile: StudentFeatureProfile, *, limit: int = 4) -> list[dict[str,
         )
     directions.sort(key=lambda item: (-item["fit_score"], item["direction_id"]))
     return directions[: max(2, min(4, int(limit)))]
-

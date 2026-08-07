@@ -14,7 +14,7 @@ except ImportError:
 
 MODULE = "memory_policy"
 ROOT = Path(__file__).resolve().parents[1]
-STRUCTURED_TYPES = {"confirmed_goal", "profile_fact", "weekly_hours", "destination", "deadline"}
+STRUCTURED_TYPES = {"explicit_profile", "preferred_name", "confirmed_goal", "profile_fact", "weekly_hours", "destination", "deadline"}
 VECTOR_TYPES = {"learning_preference", "event", "achievement", "recurring_difficulty"}
 
 

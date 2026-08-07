@@ -1,4 +1,15 @@
-# Compass v2 演示
+# Compass v2.1 演示
+
+推荐先运行四个交互式验收 Demo：
+
+```powershell
+python scripts/demo/onboarding_demo.py
+python scripts/demo/it_support_student_demo.py
+python scripts/demo/six_brain_demo.py
+python scripts/demo/full_growth_demo.py
+```
+
+它们分别验证渐进 onboarding、真实 IT 支持学生规划、六脑离线回归，以及建档—规划—降载—考试优先—新会话恢复的完整生命周期。每个脚本都有真实断言，失败时返回非零退出码。
 
 运行：
 

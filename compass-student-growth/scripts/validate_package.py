@@ -19,9 +19,14 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_FILES = [
     "SKILL.md", "manifest.yaml", "README.md", "pyproject.toml", ".gitignore",
     "config/memory_policy.json", "config/plan_rules.json", "DEVELOPMENT_REPORT.md",
+    "config/mentor_policy.json",
     "ENVIRONMENT_BASELINE.md", "THIRD_PARTY_NOTICES.md", ".env.example", "docker-compose.yml",
     "scripts/compass_engine.py", "scripts/archive_v2.py", "scripts/bootstrap_dev.py", "scripts/demo_v2.py",
+    "scripts/demo/onboarding_demo.py", "scripts/demo/it_support_student_demo.py",
+    "scripts/demo/six_brain_demo.py", "scripts/demo/full_growth_demo.py",
     "scripts/core/intent_router.py", "scripts/core/state_machine.py", "scripts/core/context_builder.py",
+    "scripts/core/onboarding_engine.py", "scripts/core/profile_sufficiency.py", "scripts/core/stage_detector.py",
+    "scripts/core/question_policy.py", "scripts/core/duplicate_question_guard.py", "scripts/core/goal_planner.py",
     "scripts/career/profile_engine.py", "scripts/career/direction_engine.py",
     "scripts/academic/capacity_engine.py", "scripts/review/review_engine.py",
     "scripts/memory/memory_engine.py", "scripts/improvement/improvement_engine.py",
@@ -34,6 +39,10 @@ REQUIRED_FILES = [
     "scripts/memory_store.py", "scripts/memory_retriever.py", "scripts/conflict_resolver.py", "scripts/safety_router.py",
     "scripts/demo_pipeline.py", "scripts/validate_package.py", "scripts/pack_skill.py",
     "tests/e2e/manual_cases.md",
+    "tests/e2e/test_real_conversation_it_support.py",
+    "reference/interaction/onboarding_rules.md", "reference/interaction/stage_rules.md",
+    "reference/interaction/sufficiency_rules.md", "reference/interaction/question_policy.md",
+    "reference/interaction/mentor_examples.md",
 ]
 REQUIRED_SKILL_TERMS = [
     "身份和角色定位", "适用场景", "何时不该使用", "核心原则", "对话状态机", "冷启动建档",
@@ -41,7 +50,9 @@ REQUIRED_SKILL_TERMS = [
     "资源推荐", "长期记忆", "状态关怀与安全路由",
     "数据来源、引用和时效", "异常处理和降级", "标准输出格式", "输出质检清单", "示例 4",
     "Review Brain", "Memory Brain", "Improvement Brain", "Evolution Brain", "Research Brain", "Proactive Brain",
-    "统一执行顺序", "Growth Archive v2", "统一周时间预算",
+    "统一执行顺序", "Growth Archive v2", "统一周时间预算", "Onboarding", "Preferred Name",
+    "Minimal Information Rule", "Action-First Mentor Policy", "Stage Detection", "Information Sufficiency",
+    "Question Budget", "Duplicate Question Guard", "Preliminary vs Formal Plan", "User Facing Response Pattern",
 ]
 
 
@@ -72,8 +83,8 @@ def validate_directory(root: Path = ROOT) -> dict[str, Any]:
         errors.append({"code": "INVALID_VERSION", "message": "manifest version 必须为语义化版本"})
     if manifest.get("scope") != "private":
         errors.append({"code": "INVALID_SCOPE", "message": "scope 必须为 private"})
-    if manifest.get("version") != "2.0.0":
-        errors.append({"code": "VERSION_NOT_V2", "message": manifest.get("version", "")})
+    if manifest.get("version") != "2.1.0":
+        errors.append({"code": "VERSION_NOT_V21", "message": manifest.get("version", "")})
     for term in ("就业方向分析", "公开招聘数据", "JD", "学习规划", "成长复盘", "长期记忆"):
         if term not in manifest.get("description", ""):
             errors.append({"code": "DESCRIPTION_TERM_MISSING", "message": term})

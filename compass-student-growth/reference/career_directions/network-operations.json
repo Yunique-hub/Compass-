@@ -1,0 +1,13 @@
+{
+  "direction_id": "network-operations",
+  "direction_name": "网络运维",
+  "work_content": "维护网络设备与连接，监控运行状态，定位网络故障并记录变更。",
+  "typical_roles": ["网络运维工程师", "网络支持工程师"],
+  "foundation_requirements": ["路由交换", "TCP/IP", "网络安全", "Linux", "监控与故障排查"],
+  "interest_traits": ["喜欢网络实验", "愿意处理现场问题", "重视稳定性"],
+  "entry_cost": "需要把课程实验升级为可重复的拓扑、监控和故障定位证据。",
+  "entry_cost_score": 0.38,
+  "risk_notes": ["部分岗位包含值班或现场支持，应提前核对工作方式", "厂商技术栈需由目标 JD 确认"],
+  "exploration_task": "用模拟器搭建三网段拓扑，设计并复现一个连通性故障，再写出排查路径。",
+  "last_reviewed": "2026-08-07"
+}
