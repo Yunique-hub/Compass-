@@ -178,3 +178,7 @@ ZIP 根目录直接包含 `SKILL.md` 和 `manifest.yaml`，没有额外套层；
 - 本项目不会自行在后台运行。宿主平台若需要定时提醒，必须另外配置平台调度能力。
 
 更完整的环境、测试、上游缺陷和工程决策见 `ENVIRONMENT_BASELINE.md` 与 `DEVELOPMENT_REPORT.md`。
+
+## 许可证
+
+本项目自主开发的代码采用 [MIT 许可证](LICENSE)。`vendor/` 中的第三方源码仍适用各自许可证，详见 `THIRD_PARTY_NOTICES.md` 与 `licenses/`。
