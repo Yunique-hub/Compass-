@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
-VERSION = "2.2.0"
+VERSION = "2.5.1"
 
 
 def result(

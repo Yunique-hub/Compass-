@@ -1,4 +1,4 @@
-"""创建根目录无额外套层的可上传 zip，并立即复验内容。"""
+"""Build and validate Compass skill, dev and full release archives."""
 from __future__ import annotations
 
 import argparse
@@ -8,36 +8,35 @@ from typing import Any
 
 try:
     from .io_utils import result, write_json
-    from .validate_package import validate_directory, validate_zip
+    from .validate_package import DEV_FILES, FORBIDDEN_PARTS, FORBIDDEN_SUFFIXES, MODES, ROOT, validate_directory, validate_zip
 except ImportError:
     from io_utils import result, write_json
-    from validate_package import validate_directory, validate_zip
+    from validate_package import DEV_FILES, FORBIDDEN_PARTS, FORBIDDEN_SUFFIXES, MODES, ROOT, validate_directory, validate_zip
 
 MODULE = "pack_skill"
-ROOT = Path(__file__).resolve().parents[1]
-EXCLUDED_PARTS = {
-    ".git", "__pycache__", ".pytest_cache", ".test-deps", ".venv", "venv",
-    ".tooling", "node_modules", ".agent-browser", ".pnpm-store", ".pycache",
-}
+SKILL_TOP_LEVEL = {"SKILL.md", "manifest.yaml", "pyproject.toml", "uv.lock", "LICENSE", "THIRD_PARTY_NOTICES.md", "config", "licenses", "reference", "scripts", "agents"}
+SKILL_SCRIPT_EXCLUSIONS = {"bootstrap_dev.py", "demo_pipeline.py", "demo_v2.py", "pack_skill.py", "validate_package.py", "vendor_sync.py"}
+DEV_TOP_LEVEL_EXCLUSIONS = {"compass-student-growth"}
 
 
 def should_include(path: Path, output: Path, mode: str) -> bool:
     relative = path.relative_to(ROOT)
-    if path.resolve() == output.resolve() or any(part in EXCLUDED_PARTS for part in relative.parts):
+    if path.resolve() == output.resolve() or any(part in FORBIDDEN_PARTS for part in relative.parts):
         return False
-    if path.suffix in {".pyc", ".db", ".sqlite", ".sqlite3", ".tmp"}:
+    if path.suffix in FORBIDDEN_SUFFIXES or relative.parts[0] in DEV_TOP_LEVEL_EXCLUSIONS:
         return False
-    if relative.parts and relative.parts[0] == "runtime":
-        return False
-    if mode == "skill" and relative.parts and relative.parts[0] == "vendor":
-        return False
-    if relative.parts and relative.parts[0] == "dist" and path.suffix == ".zip":
+    if mode == "skill":
+        if relative.parts[0] not in SKILL_TOP_LEVEL:
+            return False
+        if relative.parts[0] == "scripts" and (relative.name in SKILL_SCRIPT_EXCLUSIONS or "demo" in relative.parts):
+            return False
+    if mode != "full" and relative.parts[0] == "vendor":
         return False
     return True
 
 
 def pack(output: Path, *, mode: str = "skill") -> dict[str, Any]:
-    if mode not in {"skill", "full"}:
+    if mode not in MODES:
         return result(MODULE, ok=False, errors=[{"code": "INVALID_MODE", "message": mode}])
     directory_check = validate_directory(ROOT, mode=mode)
     if not directory_check["ok"]:
@@ -54,10 +53,11 @@ def pack(output: Path, *, mode: str = "skill") -> dict[str, Any]:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=("skill", "full"), default="skill")
+    parser.add_argument("--mode", choices=sorted(MODES), default="skill")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    output = args.output or Path(f"dist/compass-student-growth-2.2.0-{args.mode}.zip")
+    version = __import__("scripts.archive_v2", fromlist=["VERSION"]).VERSION
+    output = args.output or Path(f"dist/compass-student-growth-{version}-{args.mode}.zip")
     payload = pack(output, mode=args.mode)
     write_json(payload)
     raise SystemExit(0 if payload["ok"] else 2)

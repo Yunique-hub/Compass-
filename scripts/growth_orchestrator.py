@@ -1,4 +1,4 @@
-"""Compass 2.2 market-driven learning and evidence orchestration."""
+"""Compass 2.5 learning, assessment, evidence and replanning orchestration."""
 from __future__ import annotations
 
 import re
@@ -25,7 +25,10 @@ class GrowthOrchestrator:
 
     @staticmethod
     def _skill_from_message(message: str) -> str:
-        match = re.search(r"(?:开始|继续|现在)?(?:学习|学)\s*([A-Za-z0-9+#.\- ]+|[\u4e00-\u9fff]{2,20})", message, re.I)
+        explicit = next((item for item in ("DCF", "内科学", "药理学", "有机化学", "法律检索", "案例分析", "文献综述") if item.casefold() in message.casefold()), "")
+        if explicit:
+            return explicit
+        match = re.search(r"(?:带我学|想学|开始学|学习)\s*([A-Za-z0-9+#.\- ]+|[\u4e00-\u9fff]{2,20})", message, re.I)
         return match.group(1).strip("，。；;：: ") if match else ""
 
     def market_learning_cycle(self, *, user_id: str, request: Mapping[str, Any], archive: dict[str, Any], memory: MemoryEngine, context: Mapping[str, Any]) -> dict[str, Any]:
@@ -54,10 +57,11 @@ class GrowthOrchestrator:
         if task is None:
             if not requested_skill:
                 return {"action": "START_TUTOR", "status": "no_task", "message": "当前还没有可开始的学习任务；请先确认一个能力目标。"}
-            task = {"task_id": f"ad-hoc:{requested_skill}", "skill": requested_skill, "title": f"学习 {requested_skill}", "learning_objective": f"完成 {requested_skill} 最小场景练习", "acceptance_criteria": ["产出可打开或可运行", "说明关键操作", "记录验证结果与一个故障排查"]}
+            task = {"task_id": f"ad-hoc:{requested_skill}", "skill": requested_skill, "title": f"学习 {requested_skill}", "learning_objective": f"完成 {requested_skill} 的知识诊断、示范、练习与反馈"}
         competency = context.get("competency", {}).get(str(task.get("skill", "")), {})
         target = archive.get("career", {}).get("confirmed_goal", {}); job_context = " ".join(str(target.get(key, "")) for key in ("target_city", "target_job_normalized")).strip()
-        tutor = self.tutor.start(task, verified_level=float(competency.get("verified_level", 0.0)), job_context=job_context)
+        domain_context = dict(archive.get("extensions", {}).get("growth_context") or {})
+        tutor = self.tutor.start(task, verified_level=float(competency.get("verified_level", 0.0)), job_context=job_context, domain_context=domain_context)
         archive.setdefault("extensions", {})["current_tutor"] = tutor
         memory.persist_turn(user_id=user_id, growth_updates={"current_plan": plan, "current_lesson": tutor["lesson"], "current_skill": tutor["skill"], "next_task": tutor["exercise"]})
         return tutor
@@ -66,13 +70,25 @@ class GrowthOrchestrator:
         tutor = archive.get("extensions", {}).get("current_tutor", {}); exercise = tutor.get("exercise", {}); skill = str(request.get("skill") or tutor.get("skill") or "")
         if not skill or not exercise:
             return {"action": "ASSESS_LEARNING", "status": "no_active_exercise", "passed": False}
-        submission = dict(request.get("submission") or {}); assessment = self.assessment.evaluate(skill=skill, submission=submission, criteria=exercise.get("acceptance_criteria", []))
-        evidence = self.evidence.create(skill=skill, evidence_type=str(request.get("evidence_type", "assessment")), source=str(request.get("source", "compass-assessment")), description=str(request.get("description", "系统内练习验收")), assessment=assessment)
+        submission = dict(request.get("submission") or {})
+        if not any(submission.get(key) for key in ("text", "description", "answer", "content")):
+            submission["text"] = str(request.get("description") or request.get("message") or "")
+        assessment = self.assessment.evaluate(skill=skill, submission=submission, criteria=exercise.get("acceptance_criteria", []))
+        evidence_type = str(request.get("evidence_type") or exercise.get("expected_evidence_type") or "assessment")
+        evidence = self.evidence.create(
+            skill=skill, evidence_type=evidence_type, source=str(request.get("source", "compass-assessment")),
+            description=str(request.get("description") or submission.get("text") or "系统内练习验收"), assessment=assessment,
+            verification_level=str(request.get("verification_level", "")),
+        )
         current = context.get("competency", {}).get(skill, {}); competency = self.evidence.update_competency(current, evidence)
         growth = update_progress(context.get("growth_state", {}), task_id=str(tutor.get("task_id", "current-task")), passed=assessment["passed"], actual_hours=float(request.get("actual_hours", 0.0)))
         output: dict[str, Any] = {"action": "ASSESS_LEARNING", "assessment": assessment, "evidence": evidence, "competency": competency, "growth_state": growth, "replanned": False}
+        tutor["feedback"] = {"status": "completed", "message": assessment["feedback"], "next_action": assessment["next_action"]}
+        verified_changed = float(competency.get("verified_level", 0.0)) > float(current.get("verified_level", 0.0))
+        tutor["mastery"] = {"before": float(current.get("verified_level", 0.0)), "after": float(competency.get("verified_level", current.get("verified_level", 0.0))), "status": "updated" if verified_changed else ("supported_not_verified" if assessment["passed"] else "unchanged_pending_revision")}
+        archive.setdefault("extensions", {})["current_tutor"] = tutor
         memory.persist_turn(user_id=user_id, competency_updates=[competency] if assessment["passed"] else [], growth_updates=growth)
-        if assessment["passed"]:
+        if verified_changed:
             market = archive.get("career", {}).get("recruitment_snapshot", {}); competencies = {**context.get("competency", {}), skill: competency}; gaps = self.gaps.calculate(market.get("skill_statistics", []), competencies)
             goal = archive.get("career", {}).get("confirmed_goal", {}); previous = archive.get("academic", {}).get("current_plan", {}); plan = self.planner.replan(previous=previous, goal=goal, market=market, gaps=gaps, weekly_hours=float(previous.get("capacity_limit", 7.0)), reason="verified_competency_changed")
             archive["career"]["current_gaps"] = gaps; archive["academic"]["current_plan"] = plan; output.update({"gaps": gaps, "plan": plan, "replanned": True})

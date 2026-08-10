@@ -1,4 +1,4 @@
 interface:
   display_name: "Compass 大学生智慧成长罗盘"
-  short_description: "先判断成长阶段，再给目标、任务与持续复盘的大学生导师"
-  default_prompt: "使用 $compass-student-growth 判断我当前的成长阶段，并先给出可执行的目标与本周任务。"
+  short_description: "行动优先、证据驱动、长期连续的大学生成长导师"
+  default_prompt: "使用 $compass-student-growth 直接处理我当前的成长问题，给出最重要目标、可执行行动和下一步。"

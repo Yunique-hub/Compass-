@@ -4,6 +4,24 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 
+PUBLIC_LABELS = {
+    "professional_qualification": "资格考试准备",
+    "graduate_school": "研究生路径",
+    "career_transition": "跨领域转型",
+    "career_exploration": "方向探索",
+    "skill_development": "专业能力提升",
+    "academic_improvement": "学业提升",
+    "finance_accounting": "金融与会计",
+}
+
+
+def _public_text(value: Any) -> str:
+    text = str(value)
+    for internal, label in PUBLIC_LABELS.items():
+        text = text.replace(internal, label)
+    return text
+
+
 def _prefix(name: str, usage: bool = True) -> str:
     return f"{name}，" if name and usage else ""
 
@@ -25,10 +43,12 @@ def stage_question_response(name: str, stage: Mapping[str, Any], questions: Sequ
     lines = [lead]
     if evidence:
         lines.append(f"这个判断主要来自：{evidence}。")
-    lines.append("我只再确认会直接影响第一步计划的关键点：")
+    lines.append("你现在可以先做一个最小动作：写下未来 7 天最想完成的一项可验证产出。")
+    lines.append("我只再确认一个会直接影响建议方向的关键点：")
     lines.extend(f"{index}. {item['text']}" for index, item in enumerate(questions, 1))
     text = "\n".join(lines)
-    return {"current_judgment": lead, "why": evidence or "依据当前已知信息", "do_now": [], "next_step": "回答上面的关键点后立即开始规划", "mentor_sections": {"stage": lead, "questions": [item["text"] for item in questions]}, "text": text}
+    question_text = [item["text"] for item in questions][:1]
+    return {"current_judgment": lead, "current_goal": "明确当前最重要的问题并开始第一项可验证行动", "why": evidence or "依据当前已知信息", "do_now": ["写下未来 7 天的一项可验证产出"], "next_step": "回答关键问题后校准第一步", "questions": question_text, "mentor_sections": {"stage": lead, "questions": question_text}, "text": text}
 
 
 def action_response(
@@ -38,11 +58,13 @@ def action_response(
 ) -> dict[str, Any]:
     stage_text = f"{_prefix(name, usage)}你现在已经进入{diagnosis.get('stage_label', '当前阶段')}。"
     strengths = "、".join(str(item) for item in diagnosis.get("strengths", [])) or "你已经提供的专业和学习基础"
+    tasks = goal_plan.get("weekly_core_tasks", [])[:3]
+    task_title = "这周先做 1 件事" if len(tasks) == 1 else ("这周只做这3件事" if len(tasks) == 3 else f"这周先做 {len(tasks)} 件事")
     sections: dict[str, Any] = {
         "我对你当前状态的判断": f"{stage_text}\n你不是从零开始：{strengths}。\n当前最需要解决的是：{diagnosis.get('main_problem', '')}。",
         "当前最重要的目标": goal_plan.get("primary_goal", diagnosis.get("primary_goal", "")),
         "接下来分几个阶段": goal_plan.get("stage_goals", []),
-        "这周只做这3件事": goal_plan.get("weekly_core_tasks", [])[:3],
+        task_title: tasks,
         "为什么先做这些": goal_plan.get("why", ""),
         "下次回来告诉我什么": ["哪些完成了", "实际用了多久", "哪个最卡"],
         "还有哪些信息以后补充": (
@@ -67,12 +89,13 @@ def action_response(
     if planned and stated and planned < stated:
         lines.insert(-2, f"你提供的理论可用时间约为每周 {stated:g} 小时，但第一周只按约 {planned:g} 小时的保守上限规划；两周后再根据真实完成速度调整。")
     text = "\n\n".join(lines)
-    tasks = goal_plan.get("weekly_core_tasks", [])[:3]
     return {
         "current_judgment": stage_text,
+        "current_goal": str(goal_plan.get("primary_goal", diagnosis.get("primary_goal", ""))),
         "why": diagnosis.get("main_problem", ""),
         "do_now": [task.get("title", "") for task in tasks],
         "next_step": "下次回来告诉我：完成了哪些、实际用了多久、哪个最卡。",
+        "questions": [str(item.get("text", "")) for item in (later_questions or [])[:1]],
         "mentor_sections": sections,
         "text": text,
     }
@@ -85,8 +108,8 @@ def _render_value(value: Any) -> str:
             if isinstance(item, Mapping):
                 title = item.get("title") or item.get("period") or item.get("direction_name") or f"第 {index} 项"
                 detail = item.get("goal") or item.get("why") or item.get("exploration_task") or ""
-                rendered.append(f"{index}. {title}" + (f"：{detail}" if detail else ""))
+                rendered.append(f"{index}. {_public_text(title)}" + (f"：{_public_text(detail)}" if detail else ""))
             else:
-                rendered.append(f"{index}. {item}")
+                rendered.append(f"{index}. {_public_text(item)}")
         return "\n".join(rendered)
-    return str(value)
+    return _public_text(value)

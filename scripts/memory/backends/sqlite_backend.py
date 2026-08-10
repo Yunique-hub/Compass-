@@ -86,6 +86,8 @@ class SQLiteMemoryBackend:
         history_fields = VERSIONED_FIELDS.get(category, set())
         with self._connect() as db:
             row = db.execute("SELECT version FROM structured_state WHERE user_id=? AND category=?", (user_id, category)).fetchone()
+            if row and merged == current:
+                return {"category": category, "version": int(row["version"]), "data": current, "unchanged": True}
             version = int(row["version"]) + 1 if row else 1
             for field in history_fields:
                 if field in clean and field in current and current[field] != clean[field]:
@@ -131,7 +133,8 @@ class SQLiteMemoryBackend:
         clean = _sanitize(dict(memory))
         if any(key.casefold() in FORBIDDEN_TRACE_KEYS for key in clean):
             raise ValueError("FORBIDDEN_REASONING_MEMORY")
-        memory_id = str(clean.get("memory_id") or uuid.uuid4())
+        canonical = json.dumps(clean.get("content", clean), ensure_ascii=False, sort_keys=True)
+        memory_id = str(clean.get("memory_id") or uuid.uuid5(uuid.NAMESPACE_URL, f"{user_id}|{clean.get('memory_type', 'semantic')}|{canonical.casefold()}"))
         importance = max(0.0, min(1.0, float(clean.get("importance", 0.7))))
         with self._connect() as db:
             db.execute("INSERT OR REPLACE INTO semantic_memory VALUES(?,?,?,?,?,?)", (memory_id, user_id, str(clean.get("memory_type", "semantic")), json.dumps(clean.get("content", clean), ensure_ascii=False), importance, _now()))

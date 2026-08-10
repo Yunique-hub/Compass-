@@ -1,0 +1,158 @@
+{
+  "families": {
+    "computer_information": {
+      "title": "Computer & Information",
+      "foundational_competencies": ["计算与信息基础", "逻辑与问题分解", "数字工具"],
+      "core_competencies": ["编程与数据", "系统与工程方法", "测试与调试"],
+      "evidence_types": ["code", "technical_project", "assessment", "internship"],
+      "common_pathways": ["软件与数据", "基础设施与安全", "产品与技术交叉", "研究与深造"]
+    },
+    "engineering": {
+      "title": "Engineering",
+      "foundational_competencies": ["数学与工程基础", "工程制图", "物理与系统思维"],
+      "core_competencies": ["CAD/CAE", "设计与仿真", "制造或工程实践"],
+      "evidence_types": ["cad_model", "prototype", "simulation", "design_report", "internship"],
+      "common_pathways": ["工程设计", "智能制造与自动化", "研发与研究", "项目与运营"]
+    },
+    "mathematics_statistics": {
+      "title": "Mathematics & Statistics",
+      "foundational_competencies": ["数学分析", "线性代数", "概率统计"],
+      "core_competencies": ["证明与建模", "统计推断", "计算与数据分析"],
+      "evidence_types": ["proof", "problem_set", "modeling_report", "research_paper"],
+      "common_pathways": ["数学研究", "统计与数据", "量化与金融", "教育与应用"]
+    },
+    "life_sciences": {
+      "title": "Life Sciences",
+      "foundational_competencies": ["生命科学基础", "化学与生物统计", "实验安全"],
+      "core_competencies": ["实验技能", "研究方法", "文献阅读与数据分析"],
+      "evidence_types": ["experiment", "lab_report", "research_poster", "paper", "research_assistantship"],
+      "common_pathways": ["科研与深造", "生物技术", "医药与临床研究", "科学传播"]
+    },
+    "medicine_health": {
+      "title": "Medicine & Health",
+      "foundational_competencies": ["基础医学", "临床课程", "医学伦理与安全"],
+      "core_competencies": ["病例推理", "临床技能", "循证医学与科研"],
+      "evidence_types": ["course_assessment", "clinical_case", "clinical_skill", "rotation", "research"],
+      "common_pathways": ["临床培养", "医学科研", "公共卫生", "专业资格与考试"]
+    },
+    "economics": {
+      "title": "Economics",
+      "foundational_competencies": ["微观与宏观经济学", "数学基础", "统计学"],
+      "core_competencies": ["计量经济学", "数据分析", "经济研究与写作"],
+      "evidence_types": ["econometrics_project", "research_paper", "data_analysis", "research_assistantship"],
+      "common_pathways": ["经济学研究", "政策分析", "商业与数据分析", "金融与咨询"]
+    },
+    "finance_accounting": {
+      "title": "Finance & Accounting",
+      "foundational_competencies": ["会计与财务基础", "经济学", "Excel 与数据基础"],
+      "core_competencies": ["财务分析", "估值", "金融建模", "市场与行业研究"],
+      "evidence_types": ["financial_model", "investment_research", "case_analysis", "excel_model", "certification", "internship"],
+      "common_pathways": ["投行与资本市场", "企业财务", "审计与咨询", "投资研究", "金融科技"]
+    },
+    "business_management": {
+      "title": "Business & Management",
+      "foundational_competencies": ["商业基础", "财务与市场基础", "数据素养"],
+      "core_competencies": ["商业分析", "市场与运营", "案例与项目执行"],
+      "evidence_types": ["business_case", "market_analysis", "operations_project", "presentation", "internship"],
+      "common_pathways": ["商业分析", "市场与品牌", "运营与产品", "咨询与创业"]
+    },
+    "law": {
+      "title": "Law",
+      "foundational_competencies": ["法学基础与法条体系", "法律逻辑", "规范写作"],
+      "core_competencies": ["案例分析", "法律检索", "法律写作", "请求权或论证结构"],
+      "evidence_types": ["case_analysis", "legal_memo", "legal_research", "moot_court", "qualification_exam", "internship"],
+      "common_pathways": ["法律职业资格", "律所与企业法务", "公共部门", "法学研究与深造"]
+    },
+    "psychology": {
+      "title": "Psychology",
+      "foundational_competencies": ["心理学理论", "统计学", "研究伦理"],
+      "core_competencies": ["研究方法", "实验设计", "文献阅读", "数据分析"],
+      "evidence_types": ["experiment", "research_proposal", "data_analysis", "paper", "research_assistantship"],
+      "common_pathways": ["心理学研究与深造", "用户研究", "教育与发展", "组织与人才"]
+    },
+    "education": {
+      "title": "Education",
+      "foundational_competencies": ["教育理论", "学习科学", "课程基础"],
+      "core_competencies": ["教学设计", "课堂观察", "教学实践", "学习评价"],
+      "evidence_types": ["lesson_plan", "teaching_demo", "classroom_observation", "teaching_practice", "certification"],
+      "common_pathways": ["学校教学", "教育研究", "课程与学习设计", "教育管理"]
+    },
+    "languages_linguistics": {
+      "title": "Languages & Linguistics",
+      "foundational_competencies": ["语言能力", "写作与文本分析", "跨文化理解"],
+      "core_competencies": ["翻译或口译", "研究与沟通", "教学或商务表达"],
+      "evidence_types": ["writing", "translation", "presentation", "publication", "teaching_demo", "portfolio"],
+      "common_pathways": ["翻译与本地化", "国际商务与传播", "语言教育", "语言与文学研究"]
+    },
+    "journalism_communication": {
+      "title": "Journalism & Communication",
+      "foundational_competencies": ["新闻与传播理论", "写作", "信息核验"],
+      "core_competencies": ["采访", "内容生产", "媒体研究", "多媒体表达"],
+      "evidence_types": ["article", "interview", "report", "video", "publication", "portfolio"],
+      "common_pathways": ["新闻采编", "内容与品牌", "视频与数字媒体", "传播研究"]
+    },
+    "art_design": {
+      "title": "Art & Design",
+      "foundational_competencies": ["设计基础", "视觉表达", "审美与构图"],
+      "core_competencies": ["设计工具", "用户研究", "设计过程与 Critique", "作品集"],
+      "evidence_types": ["portfolio", "design_case", "visual_work", "user_research", "critique", "internship"],
+      "common_pathways": ["视觉与品牌设计", "UI/UX", "数字媒体", "创作与展览"]
+    },
+    "architecture_built_environment": {
+      "title": "Architecture & Built Environment",
+      "foundational_competencies": ["建筑与空间基础", "工程基础", "表达与制图"],
+      "core_competencies": ["建筑设计", "CAD/BIM", "结构或建造理解", "作品集"],
+      "evidence_types": ["design_project", "drawing", "model", "portfolio", "internship"],
+      "common_pathways": ["建筑设计", "城市与规划", "工程与建造", "研究与深造"]
+    },
+    "social_humanities": {
+      "title": "Social Sciences & Humanities",
+      "foundational_competencies": ["学科理论", "阅读与论证", "历史或社会语境"],
+      "core_competencies": ["资料分析", "研究方法", "学术写作", "口头表达"],
+      "evidence_types": ["essay", "source_analysis", "research_paper", "presentation", "fieldwork"],
+      "common_pathways": ["研究与深造", "公共文化", "内容与传播", "公共服务"]
+    },
+    "agriculture_environment": {
+      "title": "Agriculture, Environment & Earth Sciences",
+      "foundational_competencies": ["自然科学基础", "领域系统知识", "统计与实验基础"],
+      "core_competencies": ["实验或调查", "数据分析", "专业实践", "研究方法"],
+      "evidence_types": ["experiment", "fieldwork", "lab_report", "data_analysis", "research_poster"],
+      "common_pathways": ["科研与深造", "产业技术", "环境与可持续", "公共与行业服务"]
+    },
+    "other_emerging": {
+      "title": "Other / Emerging",
+      "foundational_competencies": ["专业基础结构", "通用研究与沟通", "数字素养"],
+      "core_competencies": ["领域核心方法", "专业实践", "问题解决与项目执行"],
+      "evidence_types": ["coursework", "case_analysis", "fieldwork", "portfolio", "assessment"],
+      "common_pathways": ["专业实践", "研究与深造", "交叉应用", "方向探索"]
+    },
+    "undecided": {
+      "title": "Undecided",
+      "foundational_competencies": ["通用学习能力", "信息检索", "表达与数量基础"],
+      "core_competencies": ["方向探索", "低成本试验", "证据复盘"],
+      "evidence_types": ["exploration_log", "coursework", "reflection", "assessment"],
+      "common_pathways": ["学科探索", "能力探索", "职业探索"]
+    }
+  },
+  "majors": {
+    "computer_science": {"title": "计算机", "aliases": ["计算机科学与技术", "计算机", "软件工程", "网络工程", "信息安全", "人工智能", "数据科学"], "discipline_family": "computer_information"},
+    "finance": {"title": "金融", "aliases": ["金融学", "金融", "投资学", "金融工程", "会计", "会计学", "审计"], "discipline_family": "finance_accounting"},
+    "economics": {"title": "经济", "aliases": ["经济学", "经济", "国际经济与贸易"], "discipline_family": "economics"},
+    "law": {"title": "法学", "aliases": ["法学", "法律"], "discipline_family": "law"},
+    "biology": {"title": "生物", "aliases": ["生物科学", "生物技术", "生物", "生态学"], "discipline_family": "life_sciences"},
+    "clinical_medicine": {"title": "临床医学", "aliases": ["临床医学", "医学"], "discipline_family": "medicine_health"},
+    "nursing": {"title": "护理学", "aliases": ["护理学", "护理"], "discipline_family": "medicine_health", "foundational_competencies": ["基础医学", "护理学基础", "沟通与伦理"], "core_competencies": ["护理评估", "护理诊断与计划", "临床护理技能", "患者教育", "患者安全"], "evidence_types": ["clinical_case", "skills_checklist", "patient_education", "reflection"], "common_pathways": ["临床护理", "社区护理", "护理管理", "护理研究"]},
+    "pharmacy": {"title": "药学", "aliases": ["药学", "临床药学", "制药"], "discipline_family": "medicine_health", "foundational_competencies": ["化学与生命科学", "药理学", "药剂学"], "core_competencies": ["药物作用机制", "药代动力学", "药物分析", "制剂", "药物相互作用", "合理用药"], "evidence_types": ["lab_report", "case_analysis", "course_assessment"], "common_pathways": ["医院药学", "药物研发", "药物分析", "合理用药"]},
+    "chemistry": {"title": "化学", "aliases": ["应用化学", "化学"], "discipline_family": "mathematics_statistics", "foundational_competencies": ["无机化学", "有机化学", "物理化学"], "core_competencies": ["分析化学", "实验设计与安全", "反应机理", "定量分析"], "evidence_types": ["lab_report", "experiment", "research_poster"], "common_pathways": ["化学研究", "分析检测", "化工与材料", "交叉应用"]},
+    "mechanical_engineering": {"title": "机械工程", "aliases": ["机械电子工程", "机械工程", "机械", "自动化", "机器人工程"], "discipline_family": "engineering"},
+    "civil_engineering": {"title": "土木", "aliases": ["土木工程", "土木"], "discipline_family": "engineering"},
+    "psychology": {"title": "心理学", "aliases": ["应用心理学", "心理学", "心理"], "discipline_family": "psychology"},
+    "visual_communication": {"title": "视觉传达", "aliases": ["视觉传达设计", "视觉传达", "数字媒体艺术", "设计学"], "discipline_family": "art_design"},
+    "english": {"title": "英语", "aliases": ["英语语言文学", "商务英语", "英语", "翻译"], "discipline_family": "languages_linguistics"},
+    "education": {"title": "教育学", "aliases": ["教育学", "学前教育", "小学教育", "师范"], "discipline_family": "education"},
+    "mathematics": {"title": "数学", "aliases": ["数学与应用数学", "数学", "统计学", "应用统计"], "discipline_family": "mathematics_statistics"},
+    "journalism": {"title": "新闻传播", "aliases": ["新闻学", "传播学", "新闻传播", "网络与新媒体"], "discipline_family": "journalism_communication"},
+    "architecture": {"title": "建筑", "aliases": ["建筑学", "城乡规划", "建筑"], "discipline_family": "architecture_built_environment"},
+    "materials": {"title": "材料", "aliases": ["材料科学与工程", "材料科学", "材料"], "discipline_family": "engineering", "foundational_competencies": ["材料结构", "热力学与相图", "实验基础"], "core_competencies": ["材料性能", "材料表征", "性能测试", "材料选择"], "evidence_types": ["lab_report", "technical_report", "experiment"], "common_pathways": ["材料研发", "表征与测试", "工艺与质量", "材料选择"]}
+  }
+}

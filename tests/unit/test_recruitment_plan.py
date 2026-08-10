@@ -116,6 +116,7 @@ def test_validator_removes_low_priority_until_within_budget() -> None:
 def test_resource_matcher_excludes_unverified_and_limits_count() -> None:
     output = match_resources(["Spring Boot"], maximum=4)
     resources = output["data"]["resources"]
-    assert 2 <= len(resources) <= 4
+    assert 0 < len(resources) <= 4
+    assert all("Spring Boot" in item.get("recommended_for", []) for item in resources)
     assert all(item["verified"] for item in resources)
     assert any(item["resource_id"] == "pending-spring-guide" for item in output["warnings"] if False) is False

@@ -10,5 +10,19 @@
   "Python": ["python", "py"],
   "SQL": ["sql"],
   "Pandas": ["pandas"],
-  "Pytest": ["pytest"]
+  "Pytest": ["pytest"],
+  "Financial Modeling": ["financial modeling", "金融建模", "财务建模"],
+  "DCF Valuation": ["dcf", "discounted cash flow", "DCF估值", "现金流折现估值"],
+  "Financial Analysis": ["financial analysis", "财务分析"],
+  "Legal Research": ["legal research", "法律检索", "法规检索"],
+  "Legal Writing": ["legal writing", "法律写作", "法律文书"],
+  "IRAC": ["irac", "案例分析"],
+  "Research Methods": ["research methods", "研究方法", "研究设计"],
+  "Statistical Analysis": ["statistical analysis", "统计分析", "spss"],
+  "User Research": ["user research", "用户研究", "可用性测试"],
+  "CAD": ["cad", "solidworks", "工程制图"],
+  "Lesson Planning": ["lesson planning", "教学设计", "教案设计"],
+  "Clinical Reasoning": ["clinical reasoning", "临床推理", "鉴别诊断"],
+  "Interviewing": ["interviewing", "采访", "访谈"],
+  "Stakeholder Communication": ["stakeholder communication", "利益相关方沟通", "跨部门沟通"]
 }

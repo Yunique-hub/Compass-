@@ -42,10 +42,14 @@ def evaluate_profile_sufficiency(facts: Mapping[str, Any], *, intent: str = "GEN
         non_blocking = [field for field in ("company_preference", "specific_company") if not _known(facts, field)]
         mode = "FORMAL_JOB_MARKET_PLAN" if not blocking else "PRELIMINARY_PLAN"
     elif career_context:
-        blocking = [field for field in ("major", "grade", "skills") if not _known(facts, field)]
+        need = str(fact_value(facts, "primary_need", ""))
+        has_explicit_goal = need not in {"", "实习准备", "就业准备"} or any(_known(facts, field) for field in ("career_direction", "target_job", "transition_target"))
+        blocking = [field for field in ("major",) if not _known(facts, field)]
+        if not has_explicit_goal:
+            blocking.extend(field for field in ("grade", "skills") if not _known(facts, field))
         if not (_known(facts, "primary_need") or stage):
             blocking.append("primary_need")
-        non_blocking = [field for field in ("career_direction", "daily_learning_hours", "target_city", "company_preference") if not _known(facts, field)]
+        non_blocking = [field for field in ("grade", "skills", "career_direction", "daily_learning_hours", "target_city", "company_preference") if not _known(facts, field)]
         mode = "PRELIMINARY_PLAN"
     else:
         blocking = [field for field in ("major", "grade", "primary_need") if not _known(facts, field)]

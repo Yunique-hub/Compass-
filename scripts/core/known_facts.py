@@ -5,6 +5,9 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
+from scripts.academic.major_engine import classify_major_mention, identify_academic_profile
+from scripts.core.intent_router import has_graduate_school_signal
+
 
 def _fact(value: Any, confidence: float = 1.0, source: str = "user_explicit") -> dict[str, Any]:
     return {"value": value, "confidence": confidence, "source": source, "updated_at": datetime.now(timezone.utc).isoformat()}
@@ -43,16 +46,19 @@ def extract_known_facts(message: str, request: Mapping[str, Any] | None = None) 
     if grade:
         facts["grade"] = _fact(grade)
 
-    majors = (
-        "计算机网络技术", "计算机科学与技术", "软件工程", "网络工程", "信息安全",
-        "数据科学", "人工智能", "电子信息", "大数据", "计算机",
-    )
-    major = _first(text, majors)
-    if not major:
-        major_match = re.search(r"([A-Za-z\u4e00-\u9fff+#]{2,18})专业", text)
-        major = major_match.group(1) if major_match else ""
-    if major:
-        facts["major"] = _fact(major)
+    mention = classify_major_mention(text)
+    academic = identify_academic_profile(text)
+    if academic.raw_major and mention.persistable and mention.raw_major == academic.raw_major:
+        facts["major"] = _fact(academic.raw_major)
+        facts["discipline_family"] = _fact(academic.discipline_family, academic.confidence, "academic_profile")
+    if academic.secondary_major:
+        facts["secondary_major"] = _fact(academic.secondary_major)
+    if academic.transition_target:
+        facts["transition_target"] = _fact(academic.transition_target)
+    if mention.current_topic:
+        facts["current_topic"] = _fact(mention.current_topic, mention.confidence, "user_explicit_topic")
+    if mention.learning_domain:
+        facts["learning_domain"] = _fact(mention.learning_domain, mention.confidence, "user_explicit_topic")
 
     skills = [
         skill for skill in (
@@ -64,17 +70,33 @@ def extract_known_facts(message: str, request: Mapping[str, Any] | None = None) 
     if skills:
         facts["skills"] = _fact(list(dict.fromkeys(skills)))
 
-    if "明年实习" in text:
+    if any(term in text for term in ("转行", "转数据", "不想做")):
+        facts["primary_need"] = _fact("跨专业转型")
+    elif has_graduate_school_signal(text):
+        facts["primary_need"] = _fact("学术深造")
+    elif any(term in text for term in ("法考", "教资", "资格考试", "执业资格")):
+        facts["primary_need"] = _fact("资格考试")
+    elif any(term in text for term in ("带我学", "学得很吃力", "不会")):
+        facts["primary_need"] = _fact("学习诊断")
+    elif any(term in text for term in ("想提升", "积累实践")):
+        facts["primary_need"] = _fact("学习提升")
+    elif any(term in text for term in ("不知道以后", "不知道走", "没想好")):
+        facts["primary_need"] = _fact("成长方向")
+    elif any(term in text for term in ("怎么规划", "该怎么规划")):
+        facts["primary_need"] = _fact("成长规划")
+    elif "明年实习" in text:
         facts["deadline_event"] = _fact("实习")
         facts["deadline_time"] = _fact("明年")
         facts["primary_need"] = _fact("实习准备")
-    elif any(term in text for term in ("准备实习", "怎么准备实习", "找实习", "实习就业")):
+    elif "实习" in text:
         facts["primary_need"] = _fact("实习准备")
+    elif any(term in text for term in ("投行", "UI/UX", "机器人", "量化")):
+        facts["primary_need"] = _fact("成长方向")
     elif any(term in text for term in ("秋招", "春招", "找工作", "求职", "直接就业")):
         facts["primary_need"] = _fact("就业准备")
     elif any(term in text for term in ("考试", "期末", "复习")):
         facts["primary_need"] = _fact("考试复习")
-    elif any(term in text for term in ("学习", "课程")):
+    elif any(term in text for term in ("想学习", "课程学习", "提升学习", "学习提升")):
         facts["primary_need"] = _fact("学习提升")
     elif any(term in text for term in ("迷茫", "不知道现在该干什么", "现在该怎么", "我现在该做什么")):
         facts["primary_need"] = _fact("成长方向")
@@ -125,11 +147,21 @@ def extract_known_facts(message: str, request: Mapping[str, Any] | None = None) 
     if city_match:
         facts["target_city"] = _fact((city_match.group(1) or city_match.group(2)).removesuffix("市"))
 
-    target_job_match = re.search(r"(?:目标(?:岗位|职位|工作)?(?:是|为)?|想做|做|从事|当|找(?:一份)?)([A-Za-z0-9+#.\-\u4e00-\u9fff /]{2,40}?)(?=岗位|职位|工作|方向|[，。；;！!？?]|$)", text, re.I)
+    target_job_match = re.search(
+        r"(?:现在|以后|之后|毕业后)?(?:想|计划|准备|考虑|打算)(?:要)?(?:做|从事|成为|转向|找(?:一份)?)\s*([A-Za-z0-9+#.\-\u4e00-\u9fff /]{2,40}?)(?=岗位|职位|工作|方向|[，。；;！!？?]|$)",
+        text,
+        re.I,
+    )
+    if not target_job_match:
+        target_job_match = re.search(r"(?:目标(?:岗位|职位|工作)?(?:是|为)?|从事|当|找(?:一份)?)\s*([A-Za-z0-9+#.\-\u4e00-\u9fff /]{2,40}?)(?=岗位|职位|工作|方向|[，。；;！!？?]|$)", text, re.I)
     if target_job_match:
         target_job = target_job_match.group(1).strip("，。；;、：: ")
-        if target_job:
+        if target_job and target_job not in {"什么", "什么工作", "什么职业", "点什么"}:
             facts["target_job"] = _fact(target_job)
+    if "target_job" not in facts:
+        target_role = next((role for role in ("Python 后端", "投行", "UI/UX", "UX Research", "用户研究", "机器人", "数据分析", "量化", "经济学研究", "律所") if role.casefold() in lowered), "")
+        if target_role:
+            facts["target_job"] = _fact(target_role)
 
     course = str(request.get("course", "")).strip()
     if course:

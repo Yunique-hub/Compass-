@@ -41,7 +41,7 @@ def select_questions(
         else:
             normalized.append(field)
     filtered = guard.filter_fields(list(dict.fromkeys(normalized)))
-    max_questions = int(policy["max_questions_per_turn"])
+    max_questions = min(1, int(policy["max_questions_per_turn"]))
     selected = filtered[:max_questions]
     questions = [{"field": field, "text": QUESTION_TEXT.get(field, f"请告诉我 {field}。"), "blocking": not allow_non_blocking} for field in selected]
     return {"questions": questions, "asked_fields": selected, "budget": max_questions, "reason": "selected" if selected else "no_new_field"}

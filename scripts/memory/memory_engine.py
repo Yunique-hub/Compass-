@@ -19,6 +19,14 @@ SENSITIVE_PATTERNS = (
     re.compile(r"\b\d{17}[0-9Xx]\b"),
     re.compile(r"\b(?:\d[ -]*?){16,19}\b"),
 )
+PROFILE_PERSIST_ALLOWLIST = {
+    "preferred_name", "preferred_name_usage", "education_level", "grade", "major",
+    "secondary_major", "minor", "primary_need", "claimed_skills", "courses", "interests",
+    "daily_learning_hours", "weekly_learning_hours", "weekly_hours", "weekly_available_hours",
+    "company_preference", "graduation_time", "learning_preferences", "learning_preference",
+    "academic_profile",
+}
+CONFIRMED_PROFILE_SOURCES = {"user_explicit", "user_confirmed"}
 
 
 def _sanitize(value: Any) -> Any:
@@ -27,6 +35,25 @@ def _sanitize(value: Any) -> Any:
     if isinstance(value, list):
         return [_sanitize(item) for item in value]
     return value
+
+
+def _safe_profile_updates(updates: dict[str, Any], sources: dict[str, str] | None = None) -> dict[str, Any]:
+    """Apply a field allowlist and a separate confirmation gate for academic major."""
+    sources = sources or {}
+    clean = {key: value for key, value in updates.items() if key in PROFILE_PERSIST_ALLOWLIST}
+    academic = clean.get("academic_profile")
+    academic_confirmed = isinstance(academic, dict) and academic.get("profile_source") in {"explicit", "user_confirmed"}
+    if "major" in clean and sources.get("major") not in CONFIRMED_PROFILE_SOURCES and not academic_confirmed:
+        clean.pop("major", None)
+    if isinstance(academic, dict):
+        if not academic_confirmed:
+            clean.pop("academic_profile", None)
+        else:
+            clean["academic_profile"] = {
+                key: value for key, value in academic.items()
+                if key not in {"current_topic", "learning_domain"}
+            }
+    return clean
 
 
 class MemoryEngine:
@@ -70,6 +97,7 @@ class MemoryEngine:
 
     def persist_turn(
         self, *, user_id: str, profile_updates: dict[str, Any] | None = None,
+        profile_sources: dict[str, str] | None = None,
         goal_updates: dict[str, Any] | None = None, competency_updates: list[dict[str, Any]] | None = None,
         growth_updates: dict[str, Any] | None = None, semantic_candidates: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
@@ -78,9 +106,21 @@ class MemoryEngine:
             return {"stored": False, "reason": "structured_backend_unavailable"}
         output: dict[str, Any] = {"profile": None, "goal": None, "competencies": [], "growth_state": None, "semantic": []}
         if profile_updates:
-            output["profile"] = self.persistent.save_profile(user_id, _sanitize(profile_updates))
+            safe_profile = _safe_profile_updates(_sanitize(profile_updates), profile_sources)
+            if safe_profile:
+                output["profile"] = self.persistent.save_profile(user_id, safe_profile)
         if goal_updates:
-            output["goal"] = self.persistent.save_goal(user_id, _sanitize(goal_updates))
+            clean_goal = _sanitize(goal_updates)
+            current_goal = self.persistent.load_user_context(user_id, query="", top_k=0).get("goal", {})
+            old_target = str(current_goal.get("target_job") or current_goal.get("target_job_normalized") or "")
+            new_target = str(clean_goal.get("target_job") or clean_goal.get("target_job_normalized") or "")
+            if old_target and new_target and old_target != new_target:
+                history = list(current_goal.get("goal_history") or [])
+                if old_target not in history:
+                    history.append(old_target)
+                clean_goal["previous_target_job"] = old_target
+                clean_goal["goal_history"] = history
+            output["goal"] = self.persistent.save_goal(user_id, clean_goal)
         for item in competency_updates or []:
             output["competencies"].append(self.persistent.save_competency(user_id, _sanitize(item)))
         if growth_updates:

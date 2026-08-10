@@ -4,10 +4,7 @@ from scripts.archive_v2 import migrate_archive
 from scripts.compass_engine import CompassEngine
 
 
-EXPECTED_FLOW = [
-    "SAFETY", "MEMORY_LOAD", "INTENT", "STATE", "CONTEXT", "BUSINESS", "REVIEW",
-    "RESEARCH", "IMPROVEMENT", "EVOLUTION", "PROACTIVE", "MEMORY_WRITE", "ARCHIVE", "RESPONSE",
-]
+EXPECTED_FLOW = ["SAFETY", "RESTORE", "UNDERSTAND", "DECIDE", "EXECUTE", "LEARN", "PERSIST", "RESPOND"]
 
 
 def test_engine_runs_exact_flow_and_auto_scores_directions(tmp_path: Path) -> None:
@@ -20,7 +17,7 @@ def test_engine_runs_exact_flow_and_auto_scores_directions(tmp_path: Path) -> No
     assert output["intent"] == "CAREER_EXPLORE"
     assert len(output["response"]["details"]["business"]["directions"]) >= 2
     assert "scores" not in output
-    assert output["archive"]["archive_version"] == "2.2.0"
+    assert output["archive"]["archive_version"] == "2.5.1"
 
 
 def test_engine_safety_stops_before_business(tmp_path: Path) -> None:
@@ -44,7 +41,7 @@ def test_resource_research_requires_explicit_url(tmp_path: Path) -> None:
     output = engine.run({"user_id": "student", "message": "帮我找资料"})["data"]
     assert output["intent"] == "RESOURCE_SEARCH"
     assert output["response"]["details"]["business"]["mode"] == "explicit-url-required"
-    assert next(step for step in output["trace"] if step["step"] == "RESEARCH")["status"] == "explicit-url-required"
+    assert next(step for step in output["trace"] if step["step"] == "EXECUTE")["status"] == "RESOURCE_SEARCH"
 
 
 def test_forget_resets_archive_continuity_data(tmp_path: Path) -> None:

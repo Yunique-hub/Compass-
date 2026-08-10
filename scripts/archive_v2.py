@@ -1,4 +1,4 @@
-"""Growth Archive v2 migration and atomic persistence."""
+"""Growth Archive migration and atomic persistence."""
 from __future__ import annotations
 
 import copy
@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-VERSION = "2.2.0"
+VERSION = "2.5.1"
 
 
 def empty_archive(user_id: str = "") -> dict[str, Any]:
@@ -27,6 +27,8 @@ def empty_archive(user_id: str = "") -> dict[str, Any]:
         "next_expected_update": [],
         "known_facts": {},
         "profile": {},
+        "profile_state": {},
+        "business_state": {},
         "career": {"directions": [], "confirmed_goal": {}, "capability_evidence": [], "recruitment_snapshot": {}, "skill_graph": []},
         "academic": {"courses": {}, "capacity": {}, "current_plan": {}},
         "exam": {"knowledge_points": [], "mistakes": [], "review_history": []},
@@ -91,10 +93,29 @@ def load_archive(path: str | Path, *, user_id: str = "") -> dict[str, Any]:
         raise ValueError(f"成长档案损坏或不可读，原文件未被覆盖：{exc}") from exc
 
 
+def synchronize_archive_states(archive: Mapping[str, Any]) -> dict[str, Any]:
+    value = copy.deepcopy(dict(archive))
+    value["profile_state"] = {
+        "profile": copy.deepcopy(value.get("profile", {})),
+        "known_facts": copy.deepcopy(value.get("known_facts", {})),
+        "preferred_name": value.get("preferred_name", ""),
+        "preferred_name_usage": value.get("preferred_name_usage", True),
+    }
+    value["business_state"] = {
+        "career": copy.deepcopy(value.get("career", {})),
+        "academic": copy.deepcopy(value.get("academic", {})),
+        "exam": copy.deepcopy(value.get("exam", {})),
+        "learning_strategy": copy.deepcopy(value.get("learning_strategy", {})),
+        "current_growth_stage": value.get("current_growth_stage", ""),
+    }
+    return value
+
+
 def save_archive(path: str | Path, archive: Mapping[str, Any]) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     value = migrate_archive(archive, user_id=str(archive.get("user_id", "")))
+    value = synchronize_archive_states(value)
     value["updated_at"] = datetime.now(timezone.utc).isoformat()
     temporary = target.with_suffix(target.suffix + ".tmp")
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -13,7 +13,7 @@ except ImportError:
 MODULE = "safety_router"
 HIGH_RISK = ("不想活", "想死", "自杀", "伤害自己", "结束生命", "活不下去")
 STRESS = ("压力大", "焦虑", "撑不住", "很累", "崩溃", "学不动", "失眠")
-OUT_OF_SCOPE = ("诊断我", "开什么药", "法律诉讼", "保证就业", "保证薪资")
+OUT_OF_SCOPE = ("诊断我", "开什么药", "替我打官司", "提供法律意见", "保证胜诉", "保证就业", "保证薪资")
 
 
 def route_safety(text: str) -> dict[str, Any]:

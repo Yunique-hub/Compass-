@@ -26,7 +26,9 @@ class SkillExtractor:
     def extract(self, text: str) -> dict[str, Any]:
         candidates: list[str] = []; folded = text.casefold().replace("-", " ")
         for alias, canonical in self.aliases.items():
-            if re.search(rf"(?<![\w]){re.escape(alias)}(?![\w])", folded, re.I): candidates.append(canonical)
+            contains_cjk = bool(re.search(r"[\u4e00-\u9fff]", alias))
+            if (alias in folded if contains_cjk else re.search(rf"(?<![\w]){re.escape(alias)}(?![\w])", folded, re.I)):
+                candidates.append(canonical)
         for match in TECH_PATTERN.findall(text):
             if match.casefold() not in STOPWORDS and len(match) <= 30: candidates.append(match)
         candidates.extend(DOMAIN_PATTERN.findall(text))

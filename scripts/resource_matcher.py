@@ -15,7 +15,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_resources() -> list[dict[str, Any]]:
-    return json.loads((ROOT / "reference" / "resources" / "cs_resources.json").read_text(encoding="utf-8"))["resources"]
+    resources: list[dict[str, Any]] = []
+    for path in sorted((ROOT / "reference" / "resources").glob("*_resources.json")):
+        resources.extend(json.loads(path.read_text(encoding="utf-8")).get("resources", []))
+    return resources
 
 
 def match_resources(
@@ -38,9 +41,8 @@ def match_resources(
             ranked.append((overlap * 10 + stage_score * 2 + time_score + preference_score, item))
     ranked.sort(key=lambda pair: (-pair[0], pair[1]["resource_id"]))
     selected = [item for _, item in ranked[:maximum]]
-    if len(selected) < minimum:
-        extras = [item for item in load_resources() if item.get("verified") and item not in selected]
-        selected.extend(extras[: minimum - len(selected)])
+    if wanted and len(selected) < minimum:
+        warnings.append(error("INSUFFICIENT_RELEVANT_RESOURCES", "相关资源少于期望数量；为避免跨领域串线，不使用无关资源补齐。", requested_minimum=minimum, relevant_count=len(selected)))
     return result(MODULE, {"resources": selected[:maximum], "count": min(len(selected), maximum)}, warnings=warnings)
 
 

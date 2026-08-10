@@ -1,4 +1,15 @@
-# Compass 2.2.0 Environment Baseline
+# Compass 2.5.1 Environment Baseline
+
+## 2.5.1 自主审计基线与最终状态（2026-08-10）
+
+- 工作目录：`E:\codex_my_project\Compass`；分支：`main`；本轮保留既有未提交修改，不重置、不覆盖、不自动提交。
+- 修复前功能基线：`196 passed, 1 skipped, 0 failed`；唯一 skip 是可选 `neo4j_agent_memory` 不在当前环境。skill/dev/full 目录 validator 均为 valid。
+- 修复前缺陷并非测试红灯，而是测试未覆盖的语义正确性：专业归属、Assessment 否定/不确定、Evidence 信任等级、领域串线、Secondary Goal、压力实际降载、简单 QA 等通过 A—T 探测暴露。
+- 修复后完整回归：`239 passed, 1 skipped, 0 failed`；新增 43 个语义/信任/场景验收测试。
+- A—T 可重复场景：`20/20 PASS`；34 专业 Golden Matrix：`34/34 PASS`；完整专业对话模拟：`14/14 PASS`。
+- 简单 QA 性能抽样：30 次，median `43.26 ms`，max `76.57 ms`；没有 `growth_cycle`、`goal_plan` 或 `tutor` 深层业务键。
+- Python compileall 通过；Compass skill/dev/full 目录 validator 通过；skill-creator `quick_validate.py` 输出 `Skill is valid!`。
+- 当前 `.venv` Python：CPython 3.11.4；pytest：9.1.1。Docker、Neo4j 仍非核心依赖，SQLite 为默认 canonical backend。
 
 ## 2.2 验证记录（2026-08-07）
 

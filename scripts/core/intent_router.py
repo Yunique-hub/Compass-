@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
+import re
 from typing import Any, Sequence
 
 
@@ -36,10 +37,18 @@ class Intent(str, Enum):
     SUBMIT_EXERCISE = "SUBMIT_EXERCISE"
     SUBMIT_EVIDENCE = "SUBMIT_EVIDENCE"
     GENERAL_SUPPORT = "GENERAL_SUPPORT"
+    KNOWLEDGE_QA = "KNOWLEDGE_QA"
 
 
 def _contains(text: str, *phrases: str) -> bool:
     return any(phrase in text for phrase in phrases)
+
+
+def has_graduate_school_signal(text: str) -> bool:
+    return bool(
+        re.search(r"(?:准备|计划|考虑|想|打算)?(?:以后|之后|毕业后)?(?:准备|计划|考虑|想|打算)?\s*(?:读研|考研)", text)
+        or re.search(r"申请[^，。；;]{0,12}(?:研究生|硕士)", text)
+    )
 
 
 def route_intent(message: str, attachments: Sequence[Any] | None = None) -> Intent:
@@ -52,6 +61,8 @@ def route_intent(message: str, attachments: Sequence[Any] | None = None) -> Inte
 
     if _contains(text, "忘记", "删除我的记忆", "关闭长期记忆"):
         return Intent.MEMORY_FORGET
+    if _contains(text, "现在市场", "最新岗位", "市场最看重", "招聘市场"):
+        return Intent.RECRUITMENT_ANALYSIS
     if _contains(text, "你记住了什么", "继续上次", "恢复进度", "上次进度"):
         return Intent.MEMORY_QUERY
     if _contains(text, "记住", "目标城市改成", "学习习惯改成"):
@@ -64,8 +75,23 @@ def route_intent(message: str, attachments: Sequence[Any] | None = None) -> Inte
         return Intent.SUBMIT_EVIDENCE
     if _contains(text, "继续学习", "继续这节", "接着学"):
         return Intent.CONTINUE_LEARNING
-    if _contains(text, "开始学习", "开始学", "现在学", "带我学"):
+    if _contains(
+        text,
+        "开始学习", "开始学", "现在学", "带我学", "学得很吃力", "学不会", "学得很痛苦",
+        "完全看不懂", "做题总错", "看懂了但不会做", "看懂但不会做", "记不住", "越学越乱",
+        "基础特别差", "基础差", "卡了很久", "卡很久",
+    ):
         return Intent.START_LEARNING
+    if _contains(text, "不知道毕业", "不知道以后", "不知道走", "没想好", "适合什么工作", "职业方向", "挺迷茫", "迷茫"):
+        return Intent.CAREER_EXPLORE
+    target_signal = any(term.casefold() in text for term in ("投行", "UI/UX", "UX Research", "用户研究", "机器人", "数据分析", "量化", "律所"))
+    if _contains(text, "怎么准备", "怎么规划", "该怎么规划", "现在该做什么", "法考", "准备实习", "想找", "想提升", "积累实践", "转行", "想转", "不想做") or has_graduate_school_signal(text) or target_signal:
+        return Intent.LEARNING_PLAN
+    if (
+        (_contains(text, "什么是", "有什么区别", "是什么", "怎么理解", "什么意思") or bool(re.match(r"^何为", text)))
+        and not _contains(text, "职业", "实习", "就业", "计划", "目标")
+    ):
+        return Intent.KNOWLEDGE_QA
     if _contains(text, "错题", "答错", "做错"):
         return Intent.MISTAKE_REVIEW
     if _contains(text, "出题", "练习题", "刷题"):
@@ -92,6 +118,4 @@ def route_intent(message: str, attachments: Sequence[Any] | None = None) -> Inte
         return Intent.RESOURCE_SEARCH
     if _contains(text, "复盘", "完成率", "进度怎么样"):
         return Intent.PROGRESS_REVIEW
-    if _contains(text, "不知道毕业", "适合什么工作", "职业方向", "挺迷茫", "迷茫"):
-        return Intent.CAREER_EXPLORE
     return Intent.GENERAL_SUPPORT

@@ -3,10 +3,34 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from .growth_context import GrowthContext
 from .known_facts import fact_value
 
 
-def build_mentor_diagnosis(facts: Mapping[str, Any], stage: Mapping[str, Any], *, planning_confidence: str) -> dict[str, Any]:
+def build_mentor_diagnosis(facts: Mapping[str, Any], stage: Mapping[str, Any], *, planning_confidence: str, growth_context: GrowthContext | None = None) -> dict[str, Any]:
+    if growth_context is not None:
+        academic = growth_context.academic_profile.raw_major or "当前学科"
+        target = growth_context.target_role or growth_context.primary_goal
+        strengths = growth_context.transferable_skills or growth_context.competencies[:3]
+        if growth_context.target_pathway == "career_transition":
+            problem = f"需要保留{academic}形成的可迁移能力，并明确通往{target}的能力缺口与桥接证据"
+        elif growth_context.target_pathway == "graduate_school":
+            problem = "需要把课程基础转成研究方法、文献阅读与科研经历"
+        elif growth_context.target_pathway == "professional_qualification":
+            problem = "需要把专业知识组织成资格考试体系，并用真题或案例持续反馈"
+        elif growth_context.target_pathway in {"internship", "employment"}:
+            problem = f"需要把{academic}基础转成{target}要求的实践证据"
+        else:
+            problem = "需要把当前专业学习、目标路径和可验证成果连成一条路线"
+        return {
+            "current_stage": str(stage.get("stage", "")),
+            "stage_label": stage.get("label", "当前阶段"),
+            "strengths": strengths,
+            "main_problem": problem,
+            "opportunity": f"通过{growth_context.evidence_types[0] if growth_context.evidence_types else '领域成果'}验证{target}",
+            "primary_goal": f"围绕{academic}与{target}形成可验证成长闭环",
+            "planning_confidence": planning_confidence,
+        }
     skills = list(fact_value(facts, "skills", []))
     direction = fact_value(facts, "career_direction", "当前方向")
     if isinstance(direction, list):

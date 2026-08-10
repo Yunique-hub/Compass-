@@ -8,6 +8,8 @@
     "updated_at": {"type": "string", "format": "date-time"},
     "explicit_profile": {"type": "object"},
     "confirmed_goal": {"type": "object"},
+    "profile_state": {"type": "object"},
+    "business_state": {"type": "object"},
     "pending_confirmations": {"type": "array"}
   },
   "additionalProperties": true

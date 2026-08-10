@@ -1,7 +1,7 @@
 [project]
 name = "compass-student-growth"
-version = "2.2.0"
-description = "公开招聘驱动、永久成长记忆与五脑协作的大学生成长智能体 Skill"
+version = "2.5.1"
+description = "行动优先、证据驱动、长期连续的大学生成长智能体 Skill"
 requires-python = ">=3.10"
 dependencies = [
   "jsonschema>=4.20",
@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "pydantic>=2"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

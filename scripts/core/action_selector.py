@@ -27,10 +27,13 @@ class MentorAction(str, Enum):
     RUN_GAP_ANALYSIS = "RUN_GAP_ANALYSIS"
     ADJUST_PLAN = "ADJUST_PLAN"
     FORGET_MEMORY = "FORGET_MEMORY"
+    ANSWER_KNOWLEDGE = "ANSWER_KNOWLEDGE"
 
 
 def select_action(*, preferred_name_ready: bool, intent: str, sufficiency: Mapping[str, Any], facts: Mapping[str, Any], returning_user: bool = False) -> MentorAction:
-    if not preferred_name_ready:
+    if intent == "KNOWLEDGE_QA":
+        return MentorAction.ANSWER_KNOWLEDGE
+    if not preferred_name_ready and not sufficiency.get("known_fields") and intent in {"GENERAL_SUPPORT", "ONBOARDING"}:
         return MentorAction.ASK_NAME
     if intent in {"EXAM_REVIEW", "QUESTION_PRACTICE"} and sufficiency.get("action_ready"):
         return MentorAction.RUN_REVIEW

@@ -1,4 +1,4 @@
-# Compass v2.1 演示
+# Compass v2.5 演示
 
 推荐先运行四个交互式验收 Demo：
 
@@ -7,9 +7,10 @@ python scripts/demo/onboarding_demo.py
 python scripts/demo/it_support_student_demo.py
 python scripts/demo/six_brain_demo.py
 python scripts/demo/full_growth_demo.py
+python -m scripts.demo.major_agnostic_scenarios
 ```
 
-它们分别验证渐进 onboarding、真实 IT 支持学生规划、六脑离线回归，以及建档—规划—降载—考试优先—新会话恢复的完整生命周期。每个脚本都有真实断言，失败时返回非零退出码。
+它们分别验证渐进 onboarding、真实 IT 支持学生规划、六脑离线回归、建档—规划—降载—考试优先—新会话恢复的完整生命周期，以及 14 类跨专业/未知专业/双专业/未定方向场景。每个脚本都有真实断言或结构化验收结果，失败时返回非零退出码。
 
 运行：
 
