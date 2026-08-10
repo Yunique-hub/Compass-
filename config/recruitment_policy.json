@@ -1,7 +1,0 @@
-{
-  "minimum_valid_samples": 5,
-  "confidence_sample_threshold": 20,
-  "snapshot_ttl_hours": 168,
-  "maximum_queries": 8,
-  "minimum_relevance_score": 0.35
-}

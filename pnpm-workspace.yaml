@@ -1,5 +1,0 @@
-packages:
-  - .
-
-allowBuilds:
-  agent-browser: true

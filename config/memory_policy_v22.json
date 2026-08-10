@@ -1,6 +1,0 @@
-{
-  "long_term_threshold": 0.7,
-  "temporary_ttl_hours": 24,
-  "retrieval_top_k": 5,
-  "neo4j_optional": true
-}
