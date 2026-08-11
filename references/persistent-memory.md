@@ -1,172 +1,120 @@
-# Personal Persistent Memory
+# Persistent Memory and Evidence
 
-## 目录
+仅在用户要求记住、恢复、继续长期任务，或需要保存已验证经验时读取。
 
-1. 能力边界
-2. 个人档案定位
-3. 文件结构
-4. 初始化
-5. 每轮恢复
-6. 记忆提交
-7. 冲突、压缩与恢复
-8. 用户控制与隐私
-9. 降级与迁移
+## 1. 能力与写入边界
 
-## 1. 能力边界
+把可回读的文件或宿主记忆作为跨会话状态来源，不把模型上下文本身称为永久记忆。只有同时满足以下条件才声称“已保存”：
 
-把本地文件作为跨会话的权威状态，不依赖模型上下文本身。只要宿主允许文件读写、个人目录仍存在且后续 Agent 按本协议恢复，新的会话、上下文压缩和 Skill 升级后都应能重建必要状态。
+1. 用户授权保存该类信息；
+2. 路径或宿主记忆位于允许的写入范围；
+3. 写入成功；
+4. 回读 profile、更新时间和下一动作一致。
 
-不要承诺物理意义上的“永不丢失”。磁盘删除、权限变化、设备损坏、同步冲突或用户迁移但未复制目录仍可能造成数据丢失。只有写入成功并回读关键字段后，才说“已保存到个人持久记忆”。
+文件不可写或宿主没有记忆能力时，输出可复制的继续摘要，不声称后续会话会自动记得。
 
-## 2. 个人档案定位
+## 2. 状态位置
 
-默认把个人记忆放在 Skill 安装目录之外：
+用户没有限定目录且明确授权个人持久化时，默认使用：
 
 ```text
 ~/.compass/users/<profile-id>/
 ```
 
-- 个人设备、单用户环境默认使用 `profile-id = default`，不为开始任务强制询问姓名。
-- 兼容旧版 `~/.compass-student-growth/users/<profile-id>/`：新目录不存在而旧目录存在时先使用旧档案并提示可迁移；未经确认不同时创建两份档案或静默移动数据。
-- 共享设备或用户明确管理多个档案时，询问一个不含敏感信息的短别名；只允许字母、数字、连字符和下划线。
-- 用户明确指定个人记忆目录时使用该目录，并把定位器写入宿主记忆（若可用）；跨设备时提醒用户复制或同步整个档案目录。
-- 用户明确限定“只允许写入某个目录”时，把该目录视为硬边界；默认 home 路径、宿主记忆和任何其他位置均不得写入。普通项目把状态放在该目录的 `.compass/`，课程复习把状态放在 `.compass-review/`；局部状态可以恢复该工作区，但不冒充全局个人档案。
-- 不把记忆写进 Skill 安装目录、压缩包、Git 仓库历史或公共共享文件夹，除非用户明确选择该位置并理解后果。
-- 每轮只使用一个已确认档案。目录或 owner 信息冲突时暂停写入并确认，绝不把两个用户的数据自动合并。
+- 兼容旧 `~/.compass-student-growth/users/<profile-id>/`；新目录不存在而旧目录存在时，先恢复旧档案，不同时创建两份。
+- 用户只授权当前项目时，使用项目内 `.compass/`。
+- 用户只授权课程资料目录时，使用 `.compass-review/`。
+- 不把记忆写入 Skill 安装目录、ZIP、Git 历史或公共共享目录。
+- 共享设备每次只使用一个确认的 profile；归属冲突时暂停写入，不合并不同用户数据。
 
-若用户提供普通项目目录，把项目局部状态放在 `.compass/`；若提供课程复习资料文件夹，把课程状态放在 `.compass-review/`。个人档案获授权时，同时在 `workspaces.md` 中记录绝对路径、工作区类型、项目/课程名和最近访问时间，使新会话可从固定个人目录找到活动工作区。
+## 3. 最小文件结构
 
-## 3. 文件结构
-
-按需创建以下最小结构，不提前创建空的复杂数据库：
+按需创建，不预建空数据库：
 
 ```text
 <profile-root>/
 ├── MEMORY.md
 ├── profile.md
 ├── goals.md
-├── preferences.md
-├── competencies.md
 ├── evidence.md
 ├── lessons.md
 ├── patterns.md
 ├── workspaces.md
-├── checkpoints/
-│   ├── latest.md
-│   └── previous.md
-└── sessions/
-    └── <ISO-date-time>.md
+└── checkpoints/
+    ├── latest.md
+    └── previous.md
 ```
 
-各文件职责：
+- `MEMORY.md`：短启动快照，保留当前身份、活动目标、约束、工作区和下一动作。
+- `profile.md` / `goals.md`：已确认背景、current/previous/target 和有界目标历史。
+- `evidence.md`：来源、时间、标准、信任等级和限制。
+- `lessons.md`：已复现、修复并复测的经验。
+- `patterns.md`：observed / confirmed / rejected 的工作偏好。
+- `workspaces.md`：项目或课程定位器，不复制资料全文。
+- `latest.md` / `previous.md`：当前恢复点与最近有效回退。
 
-- `MEMORY.md`：启动快照；保持短小，默认不超过 200 行或约 8 KB。
-- `profile.md`：已确认专业、阶段和稳定背景；区分 current、previous、target、topic。
-- `goals.md`：活动目标、状态、deadline、优先级和有界历史。
-- `preferences.md`：经过明确表达或多次验证的稳定偏好与约束。
-- `competencies.md`：claimed、supported、verified 分层能力状态。
-- `evidence.md`：证据来源、时间、标准、信任等级和限制。
-- `lessons.md`：经过验证的问题、根因、有效修复、适用边界和预防检查。
-- `patterns.md`：用户习惯、表达/工作偏好和能力适配假设，保留证据、置信度与确认状态。
-- `workspaces.md`：课程/项目工作区定位器，不复制全部资料内容。
-- `checkpoints/latest.md`：最近可恢复执行点。
-- `checkpoints/previous.md`：最近一次有效 checkpoint 的回退副本。
-- `sessions/`：简短审计摘要，不保存完整对话或隐藏推理。
+每个文件记录 `schema_version`、`profile_id` 和带时区的 `updated_at`。
 
-在每个文件顶部记录：
+## 4. 恢复
+
+1. 确认当前 profile 和写入边界。
+2. 读取 `MEMORY.md` 与 `checkpoints/latest.md`；损坏时使用 `previous.md`。
+3. 按当前任务只读一个必要文件，例如职业问题读 goals/evidence，课程复习读 workspace state。
+4. 把信息分为 confirmed、pending、stale 和 conflict；过期或冲突内容不静默沿用。
+5. 用一句自然语言说明恢复点并继续任务，不倾倒完整档案。
+
+优先级：
 
 ```text
-schema_version: 1
-profile_id: <id>
-updated_at: <ISO-8601 with timezone>
+用户当前明确修正 > 新验证证据 > latest checkpoint
+> canonical files > previous checkpoint > 模型推断
 ```
 
-## 4. 初始化
+## 5. 提交
 
-首次启用时：
+1. 重新读取待修改文件的 `updated_at`，避免覆盖外部更新。
+2. 只保存稳定事实、活动目标、工作区、证据、已验证经验和下一入口。
+3. 合并等价项，不重复追加；把旧 `latest.md` 保存为 `previous.md`。
+4. 写入新的 canonical 文件、`latest.md` 和短 `MEMORY.md`。
+5. 回读 profile、更新时间、变更内容和下一动作；失败时重试一次，仍失败则报告未持久化。
 
-1. 解析并显示即将使用的个人档案绝对路径。
-2. 检查该路径位于用户授权写入范围；不在范围内时先获得授权，或仅使用已授权课程状态目录。
-3. 检查目录是否已存在；存在时先读取，不覆盖。
-4. 不存在时创建最小目录和 `MEMORY.md`、`checkpoints/latest.md`。
-5. 在 `MEMORY.md` 写入 profile id、当前活动目标、活动工作区、待办和下次入口；未知项保持为空，不编造。
-6. 回读 `profile_id`、`updated_at` 和下一入口；成功后告知用户持久记忆已启用及其位置。
-7. 告知用户可随时查看、导出、纠正、暂停保存或删除该档案。
+不要保存完整聊天、原始项目/课程全文、长工具输出或临时情绪。
 
-不要把初始化变成完整画像问卷。只在当前请求需要时逐步补充其他文件。
+## 6. 证据信任
 
-## 5. 每轮恢复
-
-每次 Skill 触发时执行：
-
-1. 解析当前 profile root，并确认没有用户隔离冲突。
-2. 读取 `MEMORY.md`。
-3. 读取 `checkpoints/latest.md`；若缺失、损坏或时间早于 `previous.md`，比较两者并使用最近的完整版本。
-4. 只根据当前意图读取相关文件。例如考试复习再读 `workspaces.md` 和课程 `.compass-review/state.md`，职业问题再读 goals/evidence，项目执行再读该工作区定位器以及适用的 lessons/patterns。
-5. 将恢复内容分为 `confirmed`、`pending`、`stale` 和 `conflict`；过期 deadline 或冲突事实不静默沿用。
-6. 用一句自然语言说明恢复到哪里，然后继续任务；除非用户要求，不倾倒全部记忆。
-
-恢复优先级：
+使用以下等级，不自动升级：
 
 ```text
-用户当前明确修正
-> 已验证的新证据
-> latest checkpoint
-> canonical files
-> previous checkpoint
-> session 摘要
-> 模型推断
+SELF_REPORTED
+TEXT_SUPPORTED
+ARTIFACT_SUBMITTED
+ARTIFACT_ASSESSED
+EXECUTION_VERIFIED
+EXTERNAL_VERIFIED
 ```
 
-## 6. 记忆提交
+- 自述可影响教学起点，但不能提高 verified competency。
+- 文本覆盖标准时最多标为文本支持；真实 artifact 仍需检查。
+- 作品按标准逐项验收后，只更新通过的子能力。
+- 代码、模型或计算只有在可信环境运行或复核后才能标记执行验证。
+- 冲突证据并列记录并安排验证，不静默覆盖。
 
-在以下时机提交，而不是只在对话最后碰碰运气：
+成长证据链为：
 
-- 用户确认或修正长期事实；
-- 目标、deadline、计划或活动工作区改变；
-- 新 Evidence 或 Assessment 改变能力状态；
-- 完成/放弃 checkpoint；
-- 开始长时间材料处理、批量工具调用或可能触发上下文压缩前；
-- 生成回复前。
+```text
+Goal → Competency → Task → Output → Evidence → Criteria → Verified Competency
+```
 
-执行提交协议：
+## 7. 经验与偏好
 
-1. 重新读取将修改文件的 `updated_at`，避免覆盖外部新版本。
-2. 把新信息分类为稳定事实、目标、偏好、证据、能力、已验证经验、行为模式、工作区状态或仅会话信息。
-3. 更新对应 canonical 文件；合并等价项，不重复追加同一事实。
-4. 把旧 `latest.md` 保存为 `previous.md`。
-5. 写入新的 `latest.md`，至少包含：当前目标、正在做什么、已完成证据、未解决问题、活动工作区、下一条具体动作和更新时间。
-6. 在 `sessions/` 追加短摘要，记录“发生了什么、更新了哪些文件、下次从哪里开始”。
-7. 更新 `MEMORY.md` 的启动快照。
-8. 回读关键字段和下一动作；不一致时重试一次，仍失败则报告未持久化。
+只把经过验证的修复写入 `lessons.md`，包含问题、触发条件、根因或假设、有效修复、验证证据、适用/不适用范围和预防检查。没有复测的原因保留为 hypothesis。
 
-宿主支持安全的临时文件与重命名时，先写同目录临时文件、验证内容，再原子替换目标文件。不要在写到一半时删除旧 checkpoint。
+单次行为只写为 `observed`；用户明确确认或多个场景重复后才能成为 `confirmed`。当前指令和项目规则始终高于历史偏好，记忆不能弱化安全、事实核验、质量或授权标准。
 
-## 7. 冲突、压缩与恢复
+## 8. 隐私与用户控制
 
-- canonical 文件与 checkpoint 冲突时，不把旧 checkpoint 当成更高事实；按恢复优先级合并并记录修正。
-- 文件被其他进程更新时先重读，保留双方不冲突内容；关键冲突向用户确认。
-- `sessions/` 只做审计，不在每轮全部读取。周期性把仍有效内容压缩进 canonical 文件，然后归档旧摘要。
-- 不把原始资料全文、完整聊天记录或长工具输出复制到个人全局记忆；只保存定位器、摘要、证据引用和恢复所需状态。
-- `MEMORY.md` 超过限制时先移出历史细节，保留当前身份、活动目标、稳定约束、活动工作区、最近证据和下一动作。
-- `latest.md` 损坏时使用 `previous.md`，再用 canonical 文件和最近 session 摘要重建，并写明恢复来源。
-
-## 8. 用户控制与隐私
-
-- 只保存本 Skill 未来确实需要的用户信息。
-- 不保存密码、令牌、身份证号、银行卡、精确住址、无必要健康隐私、完整私人聊天、chain-of-thought 或隐藏推理。
-- 每条推断保持 `inferred`，未经用户确认不得升级为 Known。
-- 用户说“不要记住”时不写入；用户说“忘记 X”时先解析个人档案内的精确目标，删除后检查相关索引、checkpoint 和课程状态。
-- 删除整个档案属于破坏性操作：先显示绝对目标、提供导出选项并要求明确确认。
-- 用户要求查看时，输出可理解摘要和文件位置；用户要求导出时生成不含隐藏推理的 Markdown 包。
-
-## 9. 降级与迁移
-
-文件不可写时：
-
-1. 尝试宿主记忆；
-2. 若仍不可用，生成 `Compass Memory Export`，包含 profile、目标、约束、证据、活动工作区、进度和下一入口；
-3. 明确说明“本轮没有写入持久存储，后续会话需要重新提供此导出”；
-4. 不声称永久记忆或无损恢复。
-
-迁移设备或更换 Agent 时，复制整个 profile root 和各课程文件夹中的 `.compass-review/`。恢复后先核对 `profile_id`、路径和最新 checkpoint，再继续写入。
+- 不保存密码、令牌、身份证号、银行卡、精确住址、无必要健康隐私、第三方隐私或隐藏推理。
+- 用户可以查看、纠正、导出、暂停或删除记忆。
+- 用户说“不要记住”时不写；要求忘记具体内容时删除对应状态并检查索引和 checkpoint。
+- 删除整个档案前展示精确绝对路径、提供导出选项并再次确认。
+- 无法验证完整删除时，明确宿主限制和用户可以执行的设置操作。

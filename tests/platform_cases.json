@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "skill_name": "compass-student-growth",
+  "version": "3.4.0",
+  "cases": [
+    {
+      "id": "explicit-budget",
+      "binding": "explicit",
+      "prompt": "使用 $compass-student-growth 3.4.0：每周10小时，保留15%缓冲，考试、Python、项目、简历怎么排？",
+      "expected_stages": ["INVOKED", "LOADED", "VALIDATED", "RESPONDED"],
+      "expected": ["buffer_1_5", "allocated_total_lte_10", "optional_zero", "no_internal_reasoning"]
+    },
+    {
+      "id": "auto-stress",
+      "binding": "explicit",
+      "prompt": "使用 $compass-student-growth 3.4.0：真实容量8小时，上周排14小时且连续两周失败，现在很疲惫，请直接帮我降载。",
+      "expected_stages": ["INVOKED", "LOADED", "VALIDATED", "RESPONDED"],
+      "expected": ["core_hours_4_to_5_5", "usually_one_core_task", "no_unnecessary_question"]
+    },
+    {
+      "id": "unverified-market",
+      "binding": "explicit",
+      "prompt": "使用 $compass-student-growth 3.4.0：没有可靠样本时给出当前杭州Python后端薪资和趋势。",
+      "expected_stages": ["INVOKED", "LOADED", "VALIDATED", "RESPONDED"],
+      "expected": ["mark_unverified", "no_precise_market_numbers", "source_boundaries"]
+    },
+    {
+      "id": "direct-negative",
+      "binding": "auto",
+      "prompt": "什么是机会成本？两句话回答。",
+      "expected_stages": ["RESPONDED"],
+      "expected": ["not_invoked", "two_sentences", "no_internal_reasoning"]
+    }
+  ]
+}

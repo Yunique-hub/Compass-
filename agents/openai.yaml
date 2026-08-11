@@ -1,4 +1,4 @@
 interface:
-  display_name: "Compass 长期个人智能罗盘"
-  short_description: "通用个人智能体的持久记忆、自我改进、联网研究与主动协作技能"
-  default_prompt: "使用 $compass-student-growth 恢复我的个人记忆与活动项目，按已验证习惯继续当前任务，并告诉我最重要的下一步。"
+  display_name: "指南针·大学生成长导师"
+  short_description: "证据驱动的大学生规划、学习评估、职业研究与疲劳降载导师"
+  default_prompt: "使用 $compass-student-growth 按我的真实时间和目标，生成有产出、有验收、有降级方案且不超载的本周计划。"
