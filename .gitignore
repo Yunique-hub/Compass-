@@ -17,3 +17,4 @@ demo-output/
 # Local runtime artifacts retained after moving the project to repository root.
 /compass-student-growth/
 /vendor/
+/skill.zip
