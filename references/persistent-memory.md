@@ -23,17 +23,18 @@
 默认把个人记忆放在 Skill 安装目录之外：
 
 ```text
-~/.compass-student-growth/users/<profile-id>/
+~/.compass/users/<profile-id>/
 ```
 
 - 个人设备、单用户环境默认使用 `profile-id = default`，不为开始任务强制询问姓名。
+- 兼容旧版 `~/.compass-student-growth/users/<profile-id>/`：新目录不存在而旧目录存在时先使用旧档案并提示可迁移；未经确认不同时创建两份档案或静默移动数据。
 - 共享设备或用户明确管理多个档案时，询问一个不含敏感信息的短别名；只允许字母、数字、连字符和下划线。
 - 用户明确指定个人记忆目录时使用该目录，并把定位器写入宿主记忆（若可用）；跨设备时提醒用户复制或同步整个档案目录。
-- 用户明确限定“只允许写入某个目录”时，把该目录视为硬边界；默认 home 路径、宿主记忆和任何其他位置均不得写入。课程目录内状态可以保证该课程的跨会话恢复，但不冒充全局个人档案。
+- 用户明确限定“只允许写入某个目录”时，把该目录视为硬边界；默认 home 路径、宿主记忆和任何其他位置均不得写入。普通项目把状态放在该目录的 `.compass/`，课程复习把状态放在 `.compass-review/`；局部状态可以恢复该工作区，但不冒充全局个人档案。
 - 不把记忆写进 Skill 安装目录、压缩包、Git 仓库历史或公共共享文件夹，除非用户明确选择该位置并理解后果。
 - 每轮只使用一个已确认档案。目录或 owner 信息冲突时暂停写入并确认，绝不把两个用户的数据自动合并。
 
-若用户提供课程复习资料文件夹，把课程状态放在该文件夹的 `.compass-review/`，同时在个人档案 `workspaces.md` 中记录其绝对路径、课程名和最近访问时间。这样新会话可先从固定个人目录找到活动课程。
+若用户提供普通项目目录，把项目局部状态放在 `.compass/`；若提供课程复习资料文件夹，把课程状态放在 `.compass-review/`。个人档案获授权时，同时在 `workspaces.md` 中记录绝对路径、工作区类型、项目/课程名和最近访问时间，使新会话可从固定个人目录找到活动工作区。
 
 ## 3. 文件结构
 
@@ -47,6 +48,8 @@
 ├── preferences.md
 ├── competencies.md
 ├── evidence.md
+├── lessons.md
+├── patterns.md
 ├── workspaces.md
 ├── checkpoints/
 │   ├── latest.md
@@ -63,6 +66,8 @@
 - `preferences.md`：经过明确表达或多次验证的稳定偏好与约束。
 - `competencies.md`：claimed、supported、verified 分层能力状态。
 - `evidence.md`：证据来源、时间、标准、信任等级和限制。
+- `lessons.md`：经过验证的问题、根因、有效修复、适用边界和预防检查。
+- `patterns.md`：用户习惯、表达/工作偏好和能力适配假设，保留证据、置信度与确认状态。
 - `workspaces.md`：课程/项目工作区定位器，不复制全部资料内容。
 - `checkpoints/latest.md`：最近可恢复执行点。
 - `checkpoints/previous.md`：最近一次有效 checkpoint 的回退副本。
@@ -97,7 +102,7 @@ updated_at: <ISO-8601 with timezone>
 1. 解析当前 profile root，并确认没有用户隔离冲突。
 2. 读取 `MEMORY.md`。
 3. 读取 `checkpoints/latest.md`；若缺失、损坏或时间早于 `previous.md`，比较两者并使用最近的完整版本。
-4. 只根据当前意图读取相关文件。例如考试复习再读 `workspaces.md` 和课程 `.compass-review/state.md`，职业问题再读 goals/evidence。
+4. 只根据当前意图读取相关文件。例如考试复习再读 `workspaces.md` 和课程 `.compass-review/state.md`，职业问题再读 goals/evidence，项目执行再读该工作区定位器以及适用的 lessons/patterns。
 5. 将恢复内容分为 `confirmed`、`pending`、`stale` 和 `conflict`；过期 deadline 或冲突事实不静默沿用。
 6. 用一句自然语言说明恢复到哪里，然后继续任务；除非用户要求，不倾倒全部记忆。
 
@@ -127,7 +132,7 @@ updated_at: <ISO-8601 with timezone>
 执行提交协议：
 
 1. 重新读取将修改文件的 `updated_at`，避免覆盖外部新版本。
-2. 把新信息分类为稳定事实、目标、偏好、证据、能力、课程状态或仅会话信息。
+2. 把新信息分类为稳定事实、目标、偏好、证据、能力、已验证经验、行为模式、工作区状态或仅会话信息。
 3. 更新对应 canonical 文件；合并等价项，不重复追加同一事实。
 4. 把旧 `latest.md` 保存为 `previous.md`。
 5. 写入新的 `latest.md`，至少包含：当前目标、正在做什么、已完成证据、未解决问题、活动工作区、下一条具体动作和更新时间。
